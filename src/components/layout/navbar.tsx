@@ -1,4 +1,4 @@
-import { Bell, Moon, Sun, LogOut, ChevronRight } from 'lucide-react'
+import { Bell, Moon, Sun, LogOut, ChevronRight, Menu } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -13,6 +13,8 @@ import { authService } from '@/features/auth/services/auth-service'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { toast } from 'sonner'
 import { useTheme } from '@/components/theme-provider'
+import { MobileNav } from './mobile-nav'
+import { useState } from 'react'
 
 const routeNames: Record<string, string> = {
   '/dashboard': 'Dashboard',
@@ -30,6 +32,7 @@ export function Navbar() {
   const location = useLocation()
   const { user } = useAuthStore()
   const { theme, setTheme } = useTheme()
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
 
   const handleLogout = async () => {
     try {
@@ -44,17 +47,27 @@ export function Navbar() {
   const currentRoute = routeNames[location.pathname] || 'Panel'
 
   return (
-    <header
-      className="h-14 border-b border-border backdrop-blur-md bg-background/80 px-6 flex items-center justify-between sticky top-0 z-40"
-    >
-      <div className="flex items-center gap-2">
-        <span className="text-sm text-muted-foreground">Control+</span>
-        <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
-        <span className="text-sm font-medium">{currentRoute}</span>
-      </div>
+    <div className="contents">
+      <MobileNav open={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
+      <header
+        className="h-14 border-b border-border backdrop-blur-md bg-background/80 px-4 md:px-6 flex items-center justify-between sticky top-0 z-40"
+      >
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden"
+            onClick={() => setMobileNavOpen(true)}
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+          <span className="text-sm text-muted-foreground">Control+</span>
+          <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
+          <span className="text-sm font-medium">{currentRoute}</span>
+        </div>
 
-      <div className="flex items-center gap-1">
-        <Button variant="ghost" size="icon" className="text-muted-foreground">
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="icon" className="text-muted-foreground">
           <Bell className="h-4 w-4" />
         </Button>
 
@@ -102,5 +115,6 @@ export function Navbar() {
         </DropdownMenu>
       </div>
     </header>
+    </div>
   )
 }
