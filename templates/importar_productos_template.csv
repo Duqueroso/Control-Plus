@@ -1,0 +1,6 @@
+nombre,precio_compra,precio_venta,stock,categoria,codigo,descripcion,stock_minimo
+Lapicero Azul,1500,3000,50,Papelería,LAP001,Lapicero de tinta azul,5
+Lapicero Rojo,1500,3000,50,Papelería,LAP002,Lapicero de tinta roja,5
+Cuaderno Cuadriculado,8000,15000,30,Oficina,CUAD001,Cuaderno profesional cuadriculado,3
+Borrador Blanco,500,1000,100,Papelería,BOR001,Borrador blanco de leche,10
+Carpeta Manila,2000,4000,25,Oficina,CARP001,Carpeta manila tamaño carta,5
