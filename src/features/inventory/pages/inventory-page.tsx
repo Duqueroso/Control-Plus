@@ -51,12 +51,6 @@ export default function InventoryPage() {
     queryFn: () => inventoryService.getProducts(currentPage, PRODUCTS_PER_PAGE),
   })
 
-  const { data: allProducts = [] } = useQuery({
-    queryKey: ['products-all-count'],
-    queryFn: inventoryService.getAllProductsCount,
-    enabled: false,
-  })
-
   const products = productsData.products
   const totalProducts = productsData.total
   const totalPages = Math.ceil(totalProducts / PRODUCTS_PER_PAGE)
@@ -83,7 +77,6 @@ export default function InventoryPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] })
-      queryClient.invalidateQueries({ queryKey: ['products-all-count'] })
       toast.success('Producto creado exitosamente')
       setIsProductDialogOpen(false)
     },
@@ -107,7 +100,6 @@ export default function InventoryPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] })
-      queryClient.invalidateQueries({ queryKey: ['products-all-count'] })
       toast.success('Producto actualizado')
       setIsProductDialogOpen(false)
       setEditingProduct(null)
@@ -194,7 +186,6 @@ export default function InventoryPage() {
     mutationFn: () => inventoryService.deleteAllProducts(),
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['products'] })
-      queryClient.invalidateQueries({ queryKey: ['products-all-count'] })
       setCurrentPage(1)
       toast.success(`Eliminados ${result.deleted} productos`)
     },

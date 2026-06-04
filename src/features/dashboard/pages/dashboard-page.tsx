@@ -71,7 +71,7 @@ export default function DashboardPage() {
 
   const { data: products = [], isLoading: isLoadingProducts } = useQuery({
     queryKey: ['products'],
-    queryFn: inventoryService.getProducts,
+    queryFn: inventoryService.getAllProducts,
   })
 
   const { data: sales = [], isLoading: isLoadingSales } = useQuery({

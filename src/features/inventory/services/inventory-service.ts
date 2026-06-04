@@ -17,6 +17,16 @@ export const inventoryService = {
     return { products: data || [], total: count || 0 }
   },
 
+  async getAllProducts(): Promise<Product[]> {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*, categories(name)')
+      .order('code', { ascending: true })
+
+    if (error) throw error
+    return data || []
+  },
+
   async getAllProductsCount(): Promise<number> {
     const { count, error } = await supabase
       .from('products')
@@ -116,7 +126,7 @@ export const inventoryService = {
   },
 
   async deleteAllProducts(): Promise<{ deleted: number }> {
-    const productIds = (await this.getProducts()).map((p) => p.id)
+    const productIds = (await this.getAllProducts()).map((p) => p.id)
     if (productIds.length === 0) return { deleted: 0 }
     
     const { error } = await supabase
@@ -264,7 +274,7 @@ export const inventoryService = {
       }
     }
 
-    const existingProducts = await this.getProducts()
+    const existingProducts = await this.getAllProducts()
     const productMap = new Map(
       existingProducts.map((p) => [`${p.name.toLowerCase()}|${categories.find((c) => c.id === p.category_id)?.name.toLowerCase()}`, p])
     )
@@ -294,9 +304,9 @@ export const inventoryService = {
         continue
       }
 
-      const existingProduct = productMap.get(key)
+      const existingProduct = productMap.get(key) as Product | undefined
 
-      if (existingProduct) {
+      if (existingProduct && typeof existingProduct === 'object') {
         productsToUpdate.push({
           id: existingProduct.id,
           stock: existingProduct.stock + p.stock,

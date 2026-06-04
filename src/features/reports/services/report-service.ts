@@ -107,7 +107,7 @@ export const reportService = {
     }
 
     if (includeInventory) {
-      const products = await inventoryService.getProducts()
+      const products = await inventoryService.getAllProducts()
       const totalValue = products.reduce((acc, p) => acc + p.stock * Number(p.purchase_price), 0)
       summaryData.push(['Total Productos:', products.length])
       summaryData.push(['Valor Total Inventario:', formatCurrency(totalValue)])
@@ -224,7 +224,7 @@ export const reportService = {
     // INVENTARIO
     // =====================
     if (includeInventory) {
-      const products = await inventoryService.getProducts()
+      const products = await inventoryService.getAllProducts()
       const categories = await inventoryService.getCategories()
       const categoryMap = new Map(categories.map((c) => [c.id, c.name]))
 
