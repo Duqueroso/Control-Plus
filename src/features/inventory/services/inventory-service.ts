@@ -36,14 +36,36 @@ export const inventoryService = {
     code: string
     is_active: boolean
   }): Promise<Product> {
-    const { data: maxData } = await supabase
-      .from('products')
-      .select('code')
-      .order('code', { ascending: false })
-      .limit(1)
+    let newCode: string
     
-    const maxCode = maxData?.[0]?.code ? parseInt(maxData[0].code) : 0
-    const newCode = (maxCode + 1).toString()
+    try {
+      const { data: maxData, error: maxError } = await supabase
+        .from('products')
+        .select('code')
+        .order('code', { ascending: false })
+        .limit(1)
+      
+      if (maxError) {
+        console.error('Error fetching max code:', maxError)
+        throw maxError
+      }
+      
+      console.log('Max data result:', maxData)
+      
+      if (maxData && maxData.length > 0 && maxData[0]?.code) {
+        const maxCode = parseInt(maxData[0].code, 10)
+        console.log('Current max code:', maxCode)
+        newCode = (maxCode + 1).toString()
+      } else {
+        console.log('No products found, starting from 1')
+        newCode = '1'
+      }
+      
+      console.log('Creating product with code:', newCode)
+    } catch (err) {
+      console.error('Error in code generation:', err)
+      newCode = '1'
+    }
     
     const productWithCode = { ...product, code: newCode }
     
