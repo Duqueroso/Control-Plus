@@ -36,9 +36,20 @@ export const inventoryService = {
     code: string
     is_active: boolean
   }): Promise<Product> {
+    const { data: maxData } = await supabase
+      .from('products')
+      .select('code')
+      .order('code', { ascending: false })
+      .limit(1)
+    
+    const maxCode = maxData?.[0]?.code ? parseInt(maxData[0].code) : 0
+    const newCode = (maxCode + 1).toString()
+    
+    const productWithCode = { ...product, code: newCode }
+    
     const { data, error } = await supabase
       .from('products')
-      .insert([product])
+      .insert([productWithCode])
       .select()
       .single()
 

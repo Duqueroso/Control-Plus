@@ -55,7 +55,6 @@ export default function InventoryPage() {
 
   const createProductMutation = useMutation({
     mutationFn: (data: ProductFormData) => {
-      const code = `PRD-${Date.now().toString(36).toUpperCase()}`
       return inventoryService.createProduct({
         name: data.name,
         description: data.description || '',
@@ -65,7 +64,7 @@ export default function InventoryPage() {
         sale_price: data.salePrice,
         stock: data.stock,
         min_stock: data.minStock,
-        code,
+        code: '0',
         is_active: true,
       })
     },
