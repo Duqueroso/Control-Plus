@@ -42,26 +42,20 @@ export const inventoryService = {
       const { data: maxData, error: maxError } = await supabase
         .from('products')
         .select('code')
-        .order('code::int', { ascending: false })
-        .limit(1)
+        .limit(200)
       
       if (maxError) {
-        console.error('Error fetching max code:', maxError)
+        console.error('Error fetching codes:', maxError)
         throw maxError
       }
       
-      console.log('Max data result:', maxData)
+      const codes = maxData
+        .map((p) => parseInt(p.code, 10))
+        .filter((n) => !isNaN(n) && n > 0)
       
-      if (maxData && maxData.length > 0 && maxData[0]?.code) {
-        const maxCode = parseInt(maxData[0].code, 10)
-        console.log('Current max code:', maxCode)
-        newCode = (maxCode + 1).toString()
-      } else {
-        console.log('No products found, starting from 1')
-        newCode = '1'
-      }
-      
-      console.log('Creating product with code:', newCode)
+      const maxCode = codes.length > 0 ? Math.max(...codes) : 0
+      newCode = (maxCode + 1).toString()
+      console.log('Max code found:', maxCode, 'New code will be:', newCode)
     } catch (err) {
       console.error('Error in code generation:', err)
       newCode = '1'
