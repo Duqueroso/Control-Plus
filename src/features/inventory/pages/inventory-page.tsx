@@ -51,8 +51,13 @@ export default function InventoryPage() {
     queryFn: () => inventoryService.getProducts(currentPage, PRODUCTS_PER_PAGE),
   })
 
+  const { data: allProducts = [] } = useQuery({
+    queryKey: ['products-all'],
+    queryFn: inventoryService.getAllProducts,
+  })
+
   const products = productsData.products
-  const totalProducts = productsData.total
+  const totalProducts = allProducts.length
   const totalPages = Math.ceil(totalProducts / PRODUCTS_PER_PAGE)
 
   const { data: categories = [], isLoading: isLoadingCategories } = useQuery({
@@ -77,6 +82,7 @@ export default function InventoryPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] })
+      queryClient.invalidateQueries({ queryKey: ['products-all'] })
       toast.success('Producto creado exitosamente')
       setIsProductDialogOpen(false)
     },
@@ -100,6 +106,7 @@ export default function InventoryPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] })
+      queryClient.invalidateQueries({ queryKey: ['products-all'] })
       toast.success('Producto actualizado')
       setIsProductDialogOpen(false)
       setEditingProduct(null)
@@ -186,6 +193,7 @@ export default function InventoryPage() {
     mutationFn: () => inventoryService.deleteAllProducts(),
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['products'] })
+      queryClient.invalidateQueries({ queryKey: ['products-all'] })
       setCurrentPage(1)
       toast.success(`Eliminados ${result.deleted} productos`)
     },
@@ -401,9 +409,9 @@ export default function InventoryPage() {
     deleteProductMutation.mutate({ id: selectedProduct.id, hardDelete })
   }
 
-  const totalValue = products.reduce((acc, p) => acc + p.stock * p.purchase_price, 0)
-  const activeProducts = products.filter((p) => p.is_active).length
-  const inactiveProducts = products.filter((p) => !p.is_active).length
+  const totalValue = allProducts.reduce((acc, p) => acc + p.stock * p.purchase_price, 0)
+  const activeProducts = allProducts.filter((p) => p.is_active).length
+  const inactiveProducts = allProducts.filter((p) => !p.is_active).length
 
   return (
     <div className="space-y-6">
