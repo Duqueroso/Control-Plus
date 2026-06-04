@@ -17,6 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { inventoryService } from '../services/inventory-service'
 import type { ProductImport, ImportError, ImportResult } from '@/types'
 import { toast } from 'sonner'
