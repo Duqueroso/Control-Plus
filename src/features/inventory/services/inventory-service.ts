@@ -77,7 +77,7 @@ export const inventoryService = {
       const { data: maxData, error: maxError } = await supabase
         .from('products')
         .select('code')
-        .limit(200)
+        .limit(500)
       
       if (maxError) {
         console.error('Error fetching codes:', maxError)
@@ -85,15 +85,42 @@ export const inventoryService = {
       }
       
       const codes = maxData
-        .map((p) => parseInt(p.code, 10))
-        .filter((n) => !isNaN(n) && n > 0)
+        .map((p) => {
+          const parsed = parseInt(p.code, 10)
+          return isNaN(parsed) ? 0 : parsed
+        })
+        .filter((n) => n > 0)
       
-      const maxCode = codes.length > 0 ? Math.max(...codes) : 0
-      newCode = (maxCode + 1).toString()
-      console.log('Max code found:', maxCode, 'New code will be:', newCode)
+      let maxCode = codes.length > 0 ? Math.max(...codes) : 0
+      
+      let attempts = 0
+      let codeExists = true
+      
+      while (codeExists && attempts < 100) {
+        newCode = (maxCode + 1).toString()
+        
+        const { data: existingCheck } = await supabase
+          .from('products')
+          .select('id')
+          .eq('code', newCode)
+          .limit(1)
+        
+        if (!existingCheck || existingCheck.length === 0) {
+          codeExists = false
+        } else {
+          maxCode++
+          attempts++
+        }
+      }
+      
+      if (attempts >= 100) {
+        throw new Error('No se pudo encontrar un código disponible después de 100 intentos')
+      }
+      
+      console.log('Creating product with code:', newCode)
     } catch (err) {
       console.error('Error in code generation:', err)
-      newCode = '1'
+      throw err
     }
     
     const productWithCode = { ...product, code: newCode }
