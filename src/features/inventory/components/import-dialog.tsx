@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react'
-import { Upload, X, FileSpreadsheet, AlertCircle, CheckCircle, CircleDot } from 'lucide-react'
+import { useState, useCallback, useMemo } from 'react'
+import { Upload, X, FileSpreadsheet, AlertCircle, CheckCircle, CircleDot, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -51,6 +51,15 @@ export function ImportDialog({ open, onOpenChange, onImportComplete }: ImportDia
   const [parsedData, setParsedData] = useState<ParsedRow[]>([])
   const [errors, setErrors] = useState<ImportError[]>([])
   const [fileName, setFileName] = useState<string>('')
+  const [currentPage, setCurrentPage] = useState(0)
+
+  const ITEMS_PER_PAGE = 30
+
+  const totalPages = Math.ceil(parsedData.length / ITEMS_PER_PAGE)
+  const paginatedData = useMemo(() => {
+    const start = currentPage * ITEMS_PER_PAGE
+    return parsedData.slice(start, start + ITEMS_PER_PAGE)
+  }, [parsedData, currentPage])
 
   const processFile = useCallback((file: File) => {
     const reader = new FileReader()
@@ -134,6 +143,7 @@ export function ImportDialog({ open, onOpenChange, onImportComplete }: ImportDia
 
         setParsedData(rows)
         setErrors(validationErrors)
+        setCurrentPage(0)
       } catch (err) {
         console.error('Error parsing file:', err)
         toast.error('Error al procesar el archivo. Verifica el formato.')
@@ -173,7 +183,12 @@ export function ImportDialog({ open, onOpenChange, onImportComplete }: ImportDia
       const result: ImportResult = await inventoryService.importProducts(products)
 
       if (result.success) {
-        toast.success(`Importación exitosa: ${result.created} nuevos, ${result.updated} actualizados`)
+        const errorCount = parsedData.length - result.created - result.updated
+        if (errorCount > 0) {
+          toast.success(`Importación completada: ${result.created} nuevos, ${result.updated} actualizados, ${errorCount} errores`)
+        } else {
+          toast.success(`Importación exitosa: ${result.created} nuevos, ${result.updated} actualizados`)
+        }
         onImportComplete()
         handleClose()
       } else {
@@ -193,6 +208,7 @@ export function ImportDialog({ open, onOpenChange, onImportComplete }: ImportDia
     setErrors([])
     setFileName('')
     setIsDragging(false)
+    setCurrentPage(0)
     onOpenChange(false)
   }
 
@@ -318,8 +334,8 @@ export function ImportDialog({ open, onOpenChange, onImportComplete }: ImportDia
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {parsedData.slice(0, 50).map((row, i) => (
-                      <TableRow key={i} className={row.status === 'error' ? 'bg-red-500/5' : ''}>
+                    {paginatedData.map((row, i) => (
+                      <TableRow key={`${currentPage}-${i}`} className={row.status === 'error' ? 'bg-red-500/5' : ''}>
                         <TableCell>
                           {row.status === 'error' ? (
                             <AlertCircle className="h-4 w-4 text-red-500" />
@@ -339,12 +355,36 @@ export function ImportDialog({ open, onOpenChange, onImportComplete }: ImportDia
                     ))}
                   </TableBody>
                 </Table>
-                {parsedData.length > 50 && (
-                  <div className="p-4 text-center text-sm text-muted-foreground border-t">
-                    Mostrando 50 de {parsedData.length} productos
-                  </div>
-                )}
               </div>
+
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between pt-2">
+                  <p className="text-sm text-muted-foreground">
+                    Mostrando {currentPage * ITEMS_PER_PAGE + 1}-{Math.min((currentPage + 1) * ITEMS_PER_PAGE, parsedData.length)} de {parsedData.length} productos
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
+                      disabled={currentPage === 0}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <span className="text-sm font-medium">
+                      {currentPage + 1} / {totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
+                      disabled={currentPage >= totalPages - 1}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
 
               <div className="flex justify-end gap-3 mt-4">
                 <Button variant="outline" onClick={handleClose}>

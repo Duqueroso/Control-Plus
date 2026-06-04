@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { type ColumnDef } from '@tanstack/react-table'
-import { Plus, Search, Package, AlertTriangle, Pencil, Trash2, Power, PowerOff, FileUp } from 'lucide-react'
+import { Plus, Search, Package, AlertTriangle, Pencil, Trash2, Power, PowerOff, FileUp, Trash3 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -170,6 +170,17 @@ export default function InventoryPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['categories'] })
       toast.success('Categoría eliminada')
+    },
+    onError: (error: Error) => {
+      toast.error(`Error: ${error.message}`)
+    },
+  })
+
+  const deleteAllProductsMutation = useMutation({
+    mutationFn: () => inventoryService.deleteAllProducts(),
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ['products'] })
+      toast.success(`Eliminados ${result.deleted} productos`)
     },
     onError: (error: Error) => {
       toast.error(`Error: ${error.message}`)
@@ -413,6 +424,18 @@ export default function InventoryPage() {
           >
             <FileUp className="h-4 w-4 mr-2" />
             Importar
+          </Button>
+          <Button
+            variant="outline"
+            className="text-red-600 hover:text-red-600 hover:bg-red-50"
+            onClick={() => {
+              if (confirm('¿Eliminar TODOS los productos? Esta acción no se puede deshacer.')) {
+                deleteAllProductsMutation.mutate()
+              }
+            }}
+          >
+            <Trash3 className="h-4 w-4 mr-2" />
+            Eliminar Todo
           </Button>
           <Button
             onClick={() => {
