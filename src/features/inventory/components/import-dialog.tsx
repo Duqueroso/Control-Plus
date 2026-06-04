@@ -51,7 +51,8 @@ export function ImportDialog({ open, onOpenChange, onImportComplete }: ImportDia
   const [parsedData, setParsedData] = useState<ParsedRow[]>([])
   const [errors, setErrors] = useState<ImportError[]>([])
   const [fileName, setFileName] = useState<string>('')
-  const [currentPage, setCurrentPage] = useState(0)
+  const [currentProgress, setCurrentProgress] = useState<string>('')
+  const [progressPercent, setProgressPercent] = useState<number>(0)
 
   const ITEMS_PER_PAGE = 30
 
@@ -177,29 +178,39 @@ export function ImportDialog({ open, onOpenChange, onImportComplete }: ImportDia
 
   const handleImport = async () => {
     setIsProcessing(true)
+    setCurrentProgress('Iniciando...')
+    setProgressPercent(0)
 
     try {
       const products = parsedData.filter((r) => r.status !== 'error').map((r) => r.data)
-      toast.info(`Iniciando importación de ${products.length} productos...`)
       
-      const result: ImportResult = await inventoryService.importProducts(products)
-
-      if (result.success) {
-        const skipped = products.length - result.created - result.updated
-        if (skipped > 0) {
-          toast.success(`Importación completada: ${result.created} nuevos, ${result.updated} actualizados, ${skipped} omitidos`)
-        } else {
-          toast.success(`Importación exitosa: ${result.created} nuevos, ${result.updated} actualizados`)
+      const result: ImportResult = await inventoryService.importProducts(
+        products,
+        (current, total, message) => {
+          setProgressPercent(Math.round((current / total) * 100))
+          setCurrentProgress(message)
         }
+      )
+
+      setProgressPercent(100)
+      
+      if (result.success) {
+        setCurrentProgress('Completado')
+        toast.success(`Importación exitosa: ${result.created} nuevos, ${result.updated} actualizados`)
         onImportComplete()
         handleClose()
       } else {
+        setCurrentProgress('Errores encontrados')
         setErrors(result.errors)
-        toast.error(`Errores encontrados: ${result.errors.length}. Ver detalles en la lista.`)
+        if (result.errors.length > 0) {
+          toast.error(`Errores: ${result.errors[0].message}`)
+        }
       }
     } catch (err) {
-      console.error('Import error:', err)
-      toast.error('Error al importar productos')
+      setCurrentProgress('Error')
+      const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
+      toast.error(`Error: ${errorMessage}`)
+      setErrors([{ row: 0, field: 'import', message: errorMessage, value: null }])
     } finally {
       setIsProcessing(false)
     }
@@ -211,6 +222,8 @@ export function ImportDialog({ open, onOpenChange, onImportComplete }: ImportDia
     setFileName('')
     setIsDragging(false)
     setCurrentPage(0)
+    setCurrentProgress('')
+    setProgressPercent(0)
     onOpenChange(false)
   }
 
@@ -299,6 +312,21 @@ export function ImportDialog({ open, onOpenChange, onImportComplete }: ImportDia
                   </div>
                 )}
               </div>
+
+              {isProcessing && (
+                <div className="mb-4">
+                  <div className="flex items-center justify-between text-sm mb-1">
+                    <span className="text-muted-foreground">{currentProgress}</span>
+                    <span className="font-medium">{progressPercent}%</span>
+                  </div>
+                  <div className="h-2 bg-muted rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-primary transition-all duration-300"
+                      style={{ width: `${progressPercent}%` }}
+                    />
+                  </div>
+                </div>
+              )}
 
               {stats.errors > 0 && errors.length > 0 && (
                 <div className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
@@ -399,7 +427,7 @@ export function ImportDialog({ open, onOpenChange, onImportComplete }: ImportDia
                   {isProcessing ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Importando {stats.new} productos...
+                      {currentProgress || 'Importando...'}
                     </>
                   ) : (
                     `Importar ${stats.new} productos`

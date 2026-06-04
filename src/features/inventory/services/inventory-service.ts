@@ -161,10 +161,15 @@ export const inventoryService = {
     return data || []
   },
 
-  async importProducts(products: ProductImport[]): Promise<ImportResult> {
+  async importProducts(
+    products: ProductImport[],
+    onProgress?: (current: number, total: number, message: string) => void
+  ): Promise<ImportResult> {
     const errors: ImportError[] = []
     const codeSet = new Set<string>()
     const BATCH_SIZE = 50
+
+    onProgress?.(0, products.length, 'Validando productos...')
 
     for (let i = 0; i < products.length; i++) {
       const p = products[i]
@@ -197,6 +202,8 @@ export const inventoryService = {
       return { success: false, created: 0, updated: 0, errors }
     }
 
+    onProgress?.(0, products.length, 'Sincronizando categorías...')
+
     const categories = await this.getCategories()
     const categoryMap = new Map(categories.map((c) => [c.name.toLowerCase(), c.id]))
     const newCategories: string[] = []
@@ -221,9 +228,6 @@ export const inventoryService = {
     const productMap = new Map(
       existingProducts.map((p) => [`${p.name.toLowerCase()}|${categories.find((c) => c.id === p.category_id)?.name.toLowerCase()}`, p])
     )
-
-    let created = 0
-    let updated = 0
 
     const productsToCreate: Array<{
       name: string
@@ -257,7 +261,6 @@ export const inventoryService = {
           id: existingProduct.id,
           stock: existingProduct.stock + p.stock,
         })
-        updated++
       } else {
         const code = p.codigo?.trim() || `PRD-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`
         productsToCreate.push({
@@ -271,44 +274,56 @@ export const inventoryService = {
           code,
           is_active: true,
         })
-        created++
-      }
-
-      if ((i + 1) % 100 === 0 || i === products.length - 1) {
-        console.log(`Procesados ${i + 1} de ${products.length} productos`)
       }
     }
 
     let batchCreated = 0
     let batchUpdated = 0
+    const totalToProcess = productsToCreate.length + productsToUpdate.length
+    let processed = 0
 
     if (productsToCreate.length > 0) {
+      const totalBatches = Math.ceil(productsToCreate.length / BATCH_SIZE)
       for (let i = 0; i < productsToCreate.length; i += BATCH_SIZE) {
         const batch = productsToCreate.slice(i, i + BATCH_SIZE)
+        const batchNum = Math.floor(i / BATCH_SIZE) + 1
         try {
           const { error } = await supabase.from('products').insert(batch)
           if (error) {
-            console.error('Batch insert error:', error)
-            errors.push({ row: i + 2, field: 'batch', message: `Error en batch ${Math.floor(i / BATCH_SIZE) + 1}: ${error.message}`, value: null })
+            errors.push({ row: 0, field: 'batch', message: `Batch ${batchNum}/${totalBatches} falló: ${error.message}`, value: null })
           } else {
             batchCreated += batch.length
           }
-        } catch (err) {
-          console.error('Batch insert exception:', err)
+        } catch (err: unknown) {
+          const errorMessage = err instanceof Error ? err.message : String(err)
+          errors.push({ row: 0, field: 'batch', message: `Batch ${batchNum}/${totalBatches} exception: ${errorMessage}`, value: null })
         }
+        processed += batch.length
+        onProgress?.(processed, totalToProcess, `Insertando productos batch ${batchNum}/${totalBatches}...`)
       }
     }
 
     if (productsToUpdate.length > 0) {
-      for (const update of productsToUpdate) {
+      for (let i = 0; i < productsToUpdate.length; i++) {
         try {
-          await supabase.from('products').update({ stock: update.stock }).eq('id', update.id)
-          batchUpdated++
-        } catch (err) {
-          console.error('Update error:', err)
+          const { error } = await supabase.from('products').update({ stock: productsToUpdate[i].stock }).eq('id', productsToUpdate[i].id)
+          if (error) {
+            errors.push({ row: 0, field: 'update', message: `Error actualizando producto ID ${productsToUpdate[i].id}: ${error.message}`, value: null })
+          } else {
+            batchUpdated++
+          }
+        } catch (err: unknown) {
+          const errorMessage = err instanceof Error ? err.message : String(err)
+          errors.push({ row: 0, field: 'update', message: `Error actualizando producto: ${errorMessage}`, value: null })
+        }
+        processed++
+        if (i % 50 === 0) {
+          onProgress?.(processed, totalToProcess, `Actualizando ${processed}/${productsToUpdate.length} productos...`)
         }
       }
     }
+
+    onProgress?.(totalToProcess, totalToProcess, 'Importación completada')
 
     return {
       success: errors.length === 0,
