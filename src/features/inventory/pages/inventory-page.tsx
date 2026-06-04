@@ -213,6 +213,17 @@ export default function InventoryPage() {
     )
   }, [productsData.products, allProducts, searchQuery, showInactive])
 
+  const displayedProducts = useMemo(() => {
+    if (!searchQuery) {
+      return productsData.products
+    }
+    const start = (currentPage - 1) * PRODUCTS_PER_PAGE
+    const end = start + PRODUCTS_PER_PAGE
+    return filteredProducts.slice(start, end)
+  }, [searchQuery, currentPage, productsData.products, filteredProducts])
+
+  const searchTotalPages = searchQuery ? Math.ceil(filteredProducts.length / PRODUCTS_PER_PAGE) : totalPages
+
   const lowStockProducts = useMemo(() => {
     return allProducts.filter((p) => p.stock <= p.min_stock)
   }, [allProducts])
@@ -572,13 +583,13 @@ export default function InventoryPage() {
         <>
           <DataTable
             columns={productColumns}
-            data={filteredProducts}
+            data={displayedProducts}
             isLoading={isLoadingProducts}
           />
-          {totalPages > 1 && (
+          {(searchQuery ? searchTotalPages : totalPages) > 1 && (
             <div className="flex items-center justify-between py-4">
               <p className="text-sm text-muted-foreground">
-                Mostrando {(currentPage - 1) * PRODUCTS_PER_PAGE + 1}-{Math.min(currentPage * PRODUCTS_PER_PAGE, totalProducts)} de {totalProducts} productos
+                Mostrando {searchQuery ? filteredProducts.length : (currentPage - 1) * PRODUCTS_PER_PAGE + 1}-{searchQuery ? Math.min(currentPage * PRODUCTS_PER_PAGE, filteredProducts.length) : Math.min(currentPage * PRODUCTS_PER_PAGE, totalProducts)} de {searchQuery ? filteredProducts.length : totalProducts} productos
               </p>
               <div className="flex items-center gap-2">
                 <Button
@@ -590,13 +601,13 @@ export default function InventoryPage() {
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
                 <span className="text-sm font-medium">
-                  {currentPage} / {totalPages}
+                  {currentPage} / {searchQuery ? searchTotalPages : totalPages}
                 </span>
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={currentPage >= totalPages}
+                  onClick={() => setCurrentPage((p) => Math.min(searchQuery ? searchTotalPages : totalPages, p + 1))}
+                  disabled={currentPage >= (searchQuery ? searchTotalPages : totalPages)}
                 >
                   <ChevronRight className="h-4 w-4" />
                 </Button>

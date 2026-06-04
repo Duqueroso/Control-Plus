@@ -10,7 +10,7 @@ export const inventoryService = {
     const { data, error, count } = await supabase
       .from('products')
       .select('*, categories(name)', { count: 'exact' })
-      .order('code', { ascending: true })
+      .order('code::int', { ascending: true })
       .range(from, to)
 
     if (error) throw error
@@ -21,7 +21,7 @@ export const inventoryService = {
     const { data, error } = await supabase
       .from('products')
       .select('*, categories(name)')
-      .order('code', { ascending: true })
+      .order('code::int', { ascending: true })
 
     if (error) throw error
     return data || []
