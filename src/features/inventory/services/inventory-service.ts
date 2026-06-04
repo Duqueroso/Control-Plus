@@ -10,21 +10,33 @@ export const inventoryService = {
     const { data, error, count } = await supabase
       .from('products')
       .select('*, categories(name)', { count: 'exact' })
-      .order('code::int', { ascending: true })
       .range(from, to)
 
     if (error) throw error
-    return { products: data || [], total: count || 0 }
+    
+    const products = (data || []).sort((a, b) => {
+      const codeA = parseInt(a.code, 10) || 0
+      const codeB = parseInt(b.code, 10) || 0
+      return codeA - codeB
+    })
+    
+    return { products, total: count || 0 }
   },
 
   async getAllProducts(): Promise<Product[]> {
     const { data, error } = await supabase
       .from('products')
       .select('*, categories(name)')
-      .order('code::int', { ascending: true })
 
     if (error) throw error
-    return data || []
+    
+    const products = (data || []).sort((a, b) => {
+      const codeA = parseInt(a.code, 10) || 0
+      const codeB = parseInt(b.code, 10) || 0
+      return codeA - codeB
+    })
+    
+    return products
   },
 
   async getAllProductsCount(): Promise<number> {
