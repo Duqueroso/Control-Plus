@@ -315,8 +315,9 @@ export default function POSPage() {
                         <div className="font-medium truncate text-sm">
                           {item.product.name}
                         </div>
-                        <div className="text-xs text-muted-foreground truncate max-w-[80px]">
-                          {formatCurrency(item.product.sale_price)}
+                        <div className="flex flex-wrap items-center gap-x-1 text-xs text-muted-foreground">
+                          <span>{formatCurrency(item.product.sale_price)}</span>
+                          <span>/ und</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-1 bg-background rounded-lg px-1">
