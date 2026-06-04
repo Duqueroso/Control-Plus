@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { type ColumnDef } from '@tanstack/react-table'
-import { Plus, Search, Package, AlertTriangle, Pencil, Trash2, Power, PowerOff, FileUp, Trash3 } from 'lucide-react'
+import { Plus, Search, Package, AlertTriangle, Pencil, Trash2, Power, PowerOff, FileUp, Trash } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -434,7 +434,7 @@ export default function InventoryPage() {
               }
             }}
           >
-            <Trash3 className="h-4 w-4 mr-2" />
+            <Trash className="h-4 w-4 mr-2" />
             Eliminar Todo
           </Button>
           <Button

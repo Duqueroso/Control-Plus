@@ -76,14 +76,16 @@ export const inventoryService = {
   },
 
   async deleteAllProducts(): Promise<{ deleted: number }> {
-    const { count, error } = await supabase
+    const productIds = (await this.getProducts()).map((p) => p.id)
+    if (productIds.length === 0) return { deleted: 0 }
+    
+    const { error } = await supabase
       .from('products')
       .delete()
-      .in('id', (await this.getProducts()).map((p) => p.id))
-      .select('id', { count: 'exact' })
+      .in('id', productIds)
 
     if (error) throw error
-    return { deleted: count || 0 }
+    return { deleted: productIds.length }
   },
 
   async reactivateProduct(id: string): Promise<void> {
