@@ -71,7 +71,8 @@ export const inventoryService = {
     code: string
     is_active: boolean
   }): Promise<Product> {
-    let newCode: string
+    let newCode = '1'
+    let maxCode = 0
     
     try {
       const { data: maxData, error: maxError } = await supabase
@@ -91,7 +92,7 @@ export const inventoryService = {
         })
         .filter((n) => n > 0)
       
-      let maxCode = codes.length > 0 ? Math.max(...codes) : 0
+      maxCode = codes.length > 0 ? Math.max(...codes) : 0
       
       let attempts = 0
       let codeExists = true
