@@ -46,7 +46,7 @@ export default function InventoryPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const PRODUCTS_PER_PAGE = 50
 
-  const { isLoading: isLoadingProducts } = useQuery({
+  const { data: productsData = { products: [], total: 0 }, isLoading: isLoadingProducts } = useQuery({
     queryKey: ['products', currentPage],
     queryFn: () => inventoryService.getProducts(currentPage, PRODUCTS_PER_PAGE),
   })
@@ -202,17 +202,16 @@ export default function InventoryPage() {
   })
 
   const filteredProducts = useMemo(() => {
-    let filtered = showInactive ? allProducts : allProducts.filter((p) => p.is_active)
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase()
-      filtered = filtered.filter(
-        (p) =>
-          p.name.toLowerCase().includes(query) ||
-          p.code.toLowerCase().includes(query)
-      )
+    if (!searchQuery) {
+      return productsData.products
     }
-    return filtered
-  }, [allProducts, searchQuery, showInactive])
+    const query = searchQuery.toLowerCase()
+    return allProducts.filter(
+      (p) =>
+        (showInactive || p.is_active) &&
+        (p.name.toLowerCase().includes(query) || p.code.toLowerCase().includes(query))
+    )
+  }, [productsData.products, allProducts, searchQuery, showInactive])
 
   const lowStockProducts = useMemo(() => {
     return allProducts.filter((p) => p.stock <= p.min_stock)
