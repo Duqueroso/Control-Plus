@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Search, ShoppingCart, CreditCard, Banknote, QrCode, Plus, X, Lock } from 'lucide-react'
+import { Search, ShoppingCart, CreditCard, Banknote, QrCode, Plus, Minus, X, Lock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
@@ -258,7 +258,7 @@ export default function POSPage() {
                   )}
                 </div>
                 <CardContent className="p-3 space-y-1">
-                  <div className="font-medium text-sm truncate">{product.name}</div>
+                  <div className="font-medium text-sm truncate" title={product.name}>{product.name}</div>
                   <div className="text-xs text-muted-foreground">{product.code}</div>
                   <div className="flex items-end justify-between pt-1">
                     <span className="text-base font-bold" style={{ color: '#0A4174' }}>
@@ -360,7 +360,7 @@ export default function POSPage() {
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="font-medium truncate text-sm">
+                        <div className="font-medium truncate text-sm" title={item.product.name}>
                           {item.product.name}
                         </div>
                         <div className="flex flex-wrap items-center gap-x-1 text-xs text-muted-foreground">
@@ -377,7 +377,7 @@ export default function POSPage() {
                             updateQuantity(item.product.id, item.quantity - 1)
                           }
                         >
-                          <Plus className="h-3 w-3 rotate-45" />
+                          <Minus className="h-3 w-3" />
                         </Button>
                         <span className="w-6 text-center font-medium text-sm">
                           {item.quantity}
