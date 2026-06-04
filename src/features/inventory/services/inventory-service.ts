@@ -42,7 +42,7 @@ export const inventoryService = {
       const { data: maxData, error: maxError } = await supabase
         .from('products')
         .select('code')
-        .order('code', { ascending: false })
+        .order('code::int', { ascending: false })
         .limit(1)
       
       if (maxError) {
