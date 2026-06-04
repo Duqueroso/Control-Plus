@@ -51,6 +51,7 @@ export function ImportDialog({ open, onOpenChange, onImportComplete }: ImportDia
   const [parsedData, setParsedData] = useState<ParsedRow[]>([])
   const [errors, setErrors] = useState<ImportError[]>([])
   const [fileName, setFileName] = useState<string>('')
+  const [currentPage, setCurrentPage] = useState(0)
   const [currentProgress, setCurrentProgress] = useState<string>('')
   const [progressPercent, setProgressPercent] = useState<number>(0)
 
