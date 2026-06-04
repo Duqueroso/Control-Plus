@@ -50,6 +50,7 @@ CREATE TABLE public.products (
     code TEXT NOT NULL UNIQUE,
     name TEXT NOT NULL UNIQUE,
     description TEXT,
+    image_url TEXT,
     category_id UUID NOT NULL REFERENCES public.categories(id),
     purchase_price NUMERIC(12, 2) NOT NULL DEFAULT 0,
     sale_price NUMERIC(12, 2) NOT NULL DEFAULT 0,

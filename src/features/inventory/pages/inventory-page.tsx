@@ -59,6 +59,7 @@ export default function InventoryPage() {
       return inventoryService.createProduct({
         name: data.name,
         description: data.description || '',
+        image_url: data.imageUrl || null,
         category_id: data.categoryId,
         purchase_price: data.purchasePrice,
         sale_price: data.salePrice,
@@ -83,6 +84,7 @@ export default function InventoryPage() {
       return inventoryService.updateProduct(id, {
         name: data.name,
         description: data.description,
+        image_url: data.imageUrl || null,
         category_id: data.categoryId,
         purchase_price: data.purchasePrice,
         sale_price: data.salePrice,
@@ -192,6 +194,26 @@ export default function InventoryPage() {
   }, [products])
 
   const productColumns: ColumnDef<Product, unknown>[] = [
+    {
+      accessorKey: 'image_url',
+      header: '',
+      cell: ({ row }) => (
+        <div className="w-10 h-10 rounded-md overflow-hidden bg-muted flex-shrink-0">
+          {row.original.image_url ? (
+            <img
+              src={row.original.image_url}
+              alt={row.original.name}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+              <Package className="h-4 w-4" />
+            </div>
+          )}
+        </div>
+      ),
+      size: 60,
+    },
     {
       accessorKey: 'code',
       header: 'Código',

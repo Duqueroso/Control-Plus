@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { ImageUpload } from '@/components/ui/image-upload'
 import {
   Select,
   SelectContent,
@@ -45,6 +46,7 @@ export function ProductDialog({
     defaultValues: {
       name: '',
       description: '',
+      imageUrl: null,
       categoryId: '',
       purchasePrice: 0,
       salePrice: 0,
@@ -58,6 +60,7 @@ export function ProductDialog({
       form.reset({
         name: product.name,
         description: product.description || '',
+        imageUrl: product.image_url || null,
         categoryId: product.category_id,
         purchasePrice: product.purchase_price,
         salePrice: product.sale_price,
@@ -68,6 +71,7 @@ export function ProductDialog({
       form.reset({
         name: '',
         description: '',
+        imageUrl: null,
         categoryId: '',
         purchasePrice: 0,
         salePrice: 0,
@@ -89,6 +93,11 @@ export function ProductDialog({
             {isEditing ? 'Editar Producto' : 'Nuevo Producto'}
           </DialogTitle>
         </DialogHeader>
+
+        <ImageUpload
+          value={form.watch('imageUrl')}
+          onChange={(url) => form.setValue('imageUrl', url)}
+        />
 
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">

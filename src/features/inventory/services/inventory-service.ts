@@ -27,6 +27,7 @@ export const inventoryService = {
   async createProduct(product: {
     name: string
     description: string
+    image_url?: string | null
     category_id: string
     purchase_price: number
     sale_price: number
