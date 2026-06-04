@@ -56,7 +56,6 @@ export default function InventoryPage() {
     queryFn: inventoryService.getAllProducts,
   })
 
-  const products = productsData.products
   const totalProducts = allProducts.length
   const totalPages = Math.ceil(totalProducts / PRODUCTS_PER_PAGE)
 
