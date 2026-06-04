@@ -19,6 +19,14 @@ import {
 } from '@/components/ui/table'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { inventoryService } from '../services/inventory-service'
+
+function formatCurrency(value: number): string {
+  return new Intl.NumberFormat('es-CO', {
+    style: 'currency',
+    currency: 'COP',
+    minimumFractionDigits: 0,
+  }).format(value)
+}
 import type { ProductImport, ImportError, ImportResult } from '@/types'
 import { toast } from 'sonner'
 import * as XLSX from 'xlsx'
@@ -322,8 +330,8 @@ export function ImportDialog({ open, onOpenChange, onImportComplete }: ImportDia
                         <TableCell className={row.status === 'error' ? 'text-red-600' : ''}>
                           {row.data.nombre || '-'}
                         </TableCell>
-                        <TableCell className="text-right">{row.data.precio_compra.toFixed(2)}</TableCell>
-                        <TableCell className="text-right">{row.data.precio_venta.toFixed(2)}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(row.data.precio_compra)}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(row.data.precio_venta)}</TableCell>
                         <TableCell className="text-center">{row.data.stock}</TableCell>
                         <TableCell>{row.data.categoria}</TableCell>
                         <TableCell className="text-muted-foreground">{row.data.codigo || '-'}</TableCell>
