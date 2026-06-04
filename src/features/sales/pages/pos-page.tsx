@@ -58,12 +58,10 @@ export default function POSPage() {
   const [isProcessing, setIsProcessing] = useState(false)
   const [discountPercent, setDiscountPercent] = useState<number>(0)
 
-  const { data: productsData = { products: [], total: 0 }, isLoading: isLoadingProducts } = useQuery({
-    queryKey: ['products'],
-    queryFn: () => inventoryService.getProducts(1, 500),
+  const { data: products = [], isLoading: isLoadingProducts } = useQuery({
+    queryKey: ['products-all'],
+    queryFn: inventoryService.getAllProducts,
   })
-
-  const products = productsData.products
 
   const { data: currentCashRegister } = useQuery({
     queryKey: ['cash-register'],
