@@ -17,7 +17,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { inventoryService } from '../services/inventory-service'
 import type { ProductImport, ImportError, ImportResult } from '@/types'
 import { toast } from 'sonner'
@@ -296,16 +295,17 @@ export function ImportDialog({ open, onOpenChange, onImportComplete }: ImportDia
                 </div>
               )}
 
-              <ScrollArea className="flex-1 border rounded-lg">
+              <div className="h-[400px] overflow-y-auto border rounded-lg">
                 <Table>
-                  <TableHeader>
+                  <TableHeader className="sticky top-0 bg-muted/50 z-10">
                     <TableRow>
                       <TableHead className="w-12">Estado</TableHead>
                       <TableHead>Nombre</TableHead>
-                      <TableHead>P. Compra</TableHead>
-                      <TableHead>P. Venta</TableHead>
-                      <TableHead>Stock</TableHead>
+                      <TableHead className="text-right">P. Compra</TableHead>
+                      <TableHead className="text-right">P. Venta</TableHead>
+                      <TableHead className="text-center">Stock</TableHead>
                       <TableHead>Categoría</TableHead>
+                      <TableHead>Código</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -321,20 +321,21 @@ export function ImportDialog({ open, onOpenChange, onImportComplete }: ImportDia
                         <TableCell className={row.status === 'error' ? 'text-red-600' : ''}>
                           {row.data.nombre || '-'}
                         </TableCell>
-                        <TableCell>{row.data.precio_compra}</TableCell>
-                        <TableCell>{row.data.precio_venta}</TableCell>
-                        <TableCell>{row.data.stock}</TableCell>
+                        <TableCell className="text-right">{row.data.precio_compra.toFixed(2)}</TableCell>
+                        <TableCell className="text-right">{row.data.precio_venta.toFixed(2)}</TableCell>
+                        <TableCell className="text-center">{row.data.stock}</TableCell>
                         <TableCell>{row.data.categoria}</TableCell>
+                        <TableCell className="text-muted-foreground">{row.data.codigo || '-'}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
                 {parsedData.length > 50 && (
-                  <div className="p-4 text-center text-sm text-muted-foreground">
+                  <div className="p-4 text-center text-sm text-muted-foreground border-t">
                     Mostrando 50 de {parsedData.length} productos
                   </div>
                 )}
-              </ScrollArea>
+              </div>
 
               <div className="flex justify-end gap-3 mt-4">
                 <Button variant="outline" onClick={handleClose}>
