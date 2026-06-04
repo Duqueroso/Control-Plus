@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { type ColumnDef } from '@tanstack/react-table'
-import { Plus, Search, Package, AlertTriangle, Pencil, Trash2, Power, PowerOff, FileUp, Trash } from 'lucide-react'
+import { Plus, Search, Package, AlertTriangle, Pencil, Trash2, Power, PowerOff, FileUp, Trash, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -43,10 +43,23 @@ export default function InventoryPage() {
   const [showInactive, setShowInactive] = useState(false)
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false)
 
-  const { data: products = [], isLoading: isLoadingProducts } = useQuery({
-    queryKey: ['products'],
-    queryFn: inventoryService.getProducts,
+  const [currentPage, setCurrentPage] = useState(1)
+  const PRODUCTS_PER_PAGE = 50
+
+  const { data: productsData = { products: [], total: 0 }, isLoading: isLoadingProducts } = useQuery({
+    queryKey: ['products', currentPage],
+    queryFn: () => inventoryService.getProducts(currentPage, PRODUCTS_PER_PAGE),
   })
+
+  const { data: allProducts = [] } = useQuery({
+    queryKey: ['products-all-count'],
+    queryFn: inventoryService.getAllProductsCount,
+    enabled: false,
+  })
+
+  const products = productsData.products
+  const totalProducts = productsData.total
+  const totalPages = Math.ceil(totalProducts / PRODUCTS_PER_PAGE)
 
   const { data: categories = [], isLoading: isLoadingCategories } = useQuery({
     queryKey: ['categories'],
@@ -70,6 +83,7 @@ export default function InventoryPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] })
+      queryClient.invalidateQueries({ queryKey: ['products-all-count'] })
       toast.success('Producto creado exitosamente')
       setIsProductDialogOpen(false)
     },
@@ -93,6 +107,7 @@ export default function InventoryPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] })
+      queryClient.invalidateQueries({ queryKey: ['products-all-count'] })
       toast.success('Producto actualizado')
       setIsProductDialogOpen(false)
       setEditingProduct(null)
@@ -179,6 +194,8 @@ export default function InventoryPage() {
     mutationFn: () => inventoryService.deleteAllProducts(),
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ['products'] })
+      queryClient.invalidateQueries({ queryKey: ['products-all-count'] })
+      setCurrentPage(1)
       toast.success(`Eliminados ${result.deleted} productos`)
     },
     onError: (error: Error) => {
@@ -555,11 +572,41 @@ export default function InventoryPage() {
       </div>
 
       {activeTab === 'products' ? (
-        <DataTable
-          columns={productColumns}
-          data={filteredProducts}
-          isLoading={isLoadingProducts}
-        />
+        <>
+          <DataTable
+            columns={productColumns}
+            data={filteredProducts}
+            isLoading={isLoadingProducts}
+          />
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between py-4">
+              <p className="text-sm text-muted-foreground">
+                Mostrando {(currentPage - 1) * PRODUCTS_PER_PAGE + 1}-{Math.min(currentPage * PRODUCTS_PER_PAGE, totalProducts)} de {totalProducts} productos
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="text-sm font-medium">
+                  {currentPage} / {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage >= totalPages}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+        </>
       ) : (
         <DataTable
           columns={categoryColumns}

@@ -3,14 +3,27 @@ import type { Product, Category } from '@/types'
 import type { ProductImport, ImportResult, ImportError } from '@/types'
 
 export const inventoryService = {
-  async getProducts(): Promise<Product[]> {
-    const { data, error } = await supabase
+  async getProducts(page = 1, limit = 50): Promise<{ products: Product[]; total: number }> {
+    const from = (page - 1) * limit
+    const to = from + limit - 1
+    
+    const { data, error, count } = await supabase
       .from('products')
-      .select('*, categories(name)')
-      .order('name')
+      .select('*, categories(name)', { count: 'exact' })
+      .order('code', { ascending: true })
+      .range(from, to)
 
     if (error) throw error
-    return data || []
+    return { products: data || [], total: count || 0 }
+  },
+
+  async getAllProductsCount(): Promise<number> {
+    const { count, error } = await supabase
+      .from('products')
+      .select('*', { count: 'exact', head: true })
+
+    if (error) throw error
+    return count || 0
   },
 
   async getProduct(id: string): Promise<Product | null> {
