@@ -203,7 +203,7 @@ export default function InventoryPage() {
   })
 
   const filteredProducts = useMemo(() => {
-    let filtered = showInactive ? products : products.filter((p) => p.is_active)
+    let filtered = showInactive ? allProducts : allProducts.filter((p) => p.is_active)
     if (searchQuery) {
       const query = searchQuery.toLowerCase()
       filtered = filtered.filter(
@@ -213,11 +213,11 @@ export default function InventoryPage() {
       )
     }
     return filtered
-  }, [products, searchQuery, showInactive])
+  }, [allProducts, searchQuery, showInactive])
 
   const lowStockProducts = useMemo(() => {
-    return products.filter((p) => p.stock <= p.min_stock)
-  }, [products])
+    return allProducts.filter((p) => p.stock <= p.min_stock)
+  }, [allProducts])
 
   const productColumns: ColumnDef<Product, unknown>[] = [
     {
