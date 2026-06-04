@@ -164,6 +164,7 @@ export const inventoryService = {
   async importProducts(products: ProductImport[]): Promise<ImportResult> {
     const errors: ImportError[] = []
     const codeSet = new Set<string>()
+    const BATCH_SIZE = 50
 
     for (let i = 0; i < products.length; i++) {
       const p = products[i]
@@ -218,34 +219,48 @@ export const inventoryService = {
 
     const existingProducts = await this.getProducts()
     const productMap = new Map(
-      existingProducts.map((p) => [`${p.name.toLowerCase()}|${categories.find((c) => c.id === p.category_id)?.name.toLowerCase()}`, p.id])
+      existingProducts.map((p) => [`${p.name.toLowerCase()}|${categories.find((c) => c.id === p.category_id)?.name.toLowerCase()}`, p])
     )
 
     let created = 0
     let updated = 0
 
-    for (const p of products) {
+    const productsToCreate: Array<{
+      name: string
+      description: string
+      image_url?: string | null
+      category_id: string
+      purchase_price: number
+      sale_price: number
+      stock: number
+      min_stock: number
+      code: string
+      is_active: boolean
+    }> = []
+
+    const productsToUpdate: Array<{ id: string; stock: number }> = []
+
+    for (let i = 0; i < products.length; i++) {
+      const p = products[i]
       const key = `${p.nombre.toLowerCase().trim()}|${p.categoria.toLowerCase().trim()}`
       const categoryId = categoryMap.get(p.categoria.toLowerCase().trim())
 
       if (!categoryId) {
-        errors.push({ row: 0, field: 'categoria', message: `Categoría no encontrada: ${p.categoria}`, value: p.categoria })
+        errors.push({ row: i + 2, field: 'categoria', message: `Categoría no encontrada: ${p.categoria}`, value: p.categoria })
         continue
       }
 
-      const existingId = productMap.get(key)
+      const existingProduct = productMap.get(key)
 
-      if (existingId) {
-        const existingProduct = existingProducts.find((ep) => ep.id === existingId)
-        if (existingProduct) {
-          await this.updateProduct(existingId, {
-            stock: existingProduct.stock + p.stock,
-          })
-          updated++
-        }
+      if (existingProduct) {
+        productsToUpdate.push({
+          id: existingProduct.id,
+          stock: existingProduct.stock + p.stock,
+        })
+        updated++
       } else {
         const code = p.codigo?.trim() || `PRD-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`
-        await this.createProduct({
+        productsToCreate.push({
           name: p.nombre.trim(),
           description: p.descripcion?.trim() || '',
           category_id: categoryId,
@@ -258,8 +273,48 @@ export const inventoryService = {
         })
         created++
       }
+
+      if ((i + 1) % 100 === 0 || i === products.length - 1) {
+        console.log(`Procesados ${i + 1} de ${products.length} productos`)
+      }
     }
 
-    return { success: errors.length === 0, created, updated, errors }
+    let batchCreated = 0
+    let batchUpdated = 0
+
+    if (productsToCreate.length > 0) {
+      for (let i = 0; i < productsToCreate.length; i += BATCH_SIZE) {
+        const batch = productsToCreate.slice(i, i + BATCH_SIZE)
+        try {
+          const { error } = await supabase.from('products').insert(batch)
+          if (error) {
+            console.error('Batch insert error:', error)
+            errors.push({ row: i + 2, field: 'batch', message: `Error en batch ${Math.floor(i / BATCH_SIZE) + 1}: ${error.message}`, value: null })
+          } else {
+            batchCreated += batch.length
+          }
+        } catch (err) {
+          console.error('Batch insert exception:', err)
+        }
+      }
+    }
+
+    if (productsToUpdate.length > 0) {
+      for (const update of productsToUpdate) {
+        try {
+          await supabase.from('products').update({ stock: update.stock }).eq('id', update.id)
+          batchUpdated++
+        } catch (err) {
+          console.error('Update error:', err)
+        }
+      }
+    }
+
+    return {
+      success: errors.length === 0,
+      created: batchCreated,
+      updated: batchUpdated,
+      errors
+    }
   },
 }

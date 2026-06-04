@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from 'react'
-import { Upload, X, FileSpreadsheet, AlertCircle, CheckCircle, CircleDot, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Upload, X, FileSpreadsheet, AlertCircle, CheckCircle, CircleDot, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -180,12 +180,14 @@ export function ImportDialog({ open, onOpenChange, onImportComplete }: ImportDia
 
     try {
       const products = parsedData.filter((r) => r.status !== 'error').map((r) => r.data)
+      toast.info(`Iniciando importación de ${products.length} productos...`)
+      
       const result: ImportResult = await inventoryService.importProducts(products)
 
       if (result.success) {
-        const errorCount = parsedData.length - result.created - result.updated
-        if (errorCount > 0) {
-          toast.success(`Importación completada: ${result.created} nuevos, ${result.updated} actualizados, ${errorCount} errores`)
+        const skipped = products.length - result.created - result.updated
+        if (skipped > 0) {
+          toast.success(`Importación completada: ${result.created} nuevos, ${result.updated} actualizados, ${skipped} omitidos`)
         } else {
           toast.success(`Importación exitosa: ${result.created} nuevos, ${result.updated} actualizados`)
         }
@@ -193,7 +195,7 @@ export function ImportDialog({ open, onOpenChange, onImportComplete }: ImportDia
         handleClose()
       } else {
         setErrors(result.errors)
-        toast.error(`Errores encontrados: ${result.errors.length}`)
+        toast.error(`Errores encontrados: ${result.errors.length}. Ver detalles en la lista.`)
       }
     } catch (err) {
       console.error('Import error:', err)
@@ -387,14 +389,21 @@ export function ImportDialog({ open, onOpenChange, onImportComplete }: ImportDia
               )}
 
               <div className="flex justify-end gap-3 mt-4">
-                <Button variant="outline" onClick={handleClose}>
+                <Button variant="outline" onClick={handleClose} disabled={isProcessing}>
                   Cancelar
                 </Button>
                 <Button
                   onClick={handleImport}
                   disabled={!canImport || isProcessing}
                 >
-                  {isProcessing ? 'Importando...' : `Importar ${stats.new} productos`}
+                  {isProcessing ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Importando {stats.new} productos...
+                    </>
+                  ) : (
+                    `Importar ${stats.new} productos`
+                  )}
                 </Button>
               </div>
             </div>
