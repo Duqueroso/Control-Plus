@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Search, ShoppingCart, CreditCard, Banknote, QrCode, Plus, X, Lock, ChevronRight } from 'lucide-react'
+import { Search, ShoppingCart, CreditCard, Banknote, QrCode, Plus, X, Lock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
