@@ -46,7 +46,7 @@ export default function InventoryPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const PRODUCTS_PER_PAGE = 50
 
-  const { data: productsData = { products: [], total: 0 }, isLoading: isLoadingProducts } = useQuery({
+  const { isLoading: isLoadingProducts } = useQuery({
     queryKey: ['products', currentPage],
     queryFn: () => inventoryService.getProducts(currentPage, PRODUCTS_PER_PAGE),
   })
