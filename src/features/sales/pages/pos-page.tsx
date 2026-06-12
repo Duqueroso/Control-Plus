@@ -96,7 +96,7 @@ export default function POSPage() {
       (p) =>
         p.is_active &&
         p.stock > 0 &&
-        (p.name.toLowerCase().includes(query) || p.code.toLowerCase().includes(query))
+        (p.name.toLowerCase().includes(query))
     )
   }, [products, searchQuery])
 
@@ -259,7 +259,6 @@ export default function POSPage() {
                 </div>
                 <CardContent className="p-3 space-y-1">
                   <div className="font-medium text-sm truncate" title={product.name}>{product.name}</div>
-                  <div className="text-xs text-muted-foreground">{product.code}</div>
                   <div className="flex items-end justify-between pt-1">
                     <span className="text-base font-bold" style={{ color: '#0A4174' }}>
                       {formatCurrency(product.sale_price)}
