@@ -68,67 +68,11 @@ export const inventoryService = {
     sale_price: number
     stock: number
     min_stock: number
-    code: string
     is_active: boolean
   }): Promise<Product> {
-    let newCode = '1'
-    let maxCode = 0
-    
-    try {
-      const { data: maxData, error: maxError } = await supabase
-        .from('products')
-        .select('code')
-        .limit(500)
-      
-      if (maxError) {
-        console.error('Error fetching codes:', maxError)
-        throw maxError
-      }
-      
-      const codes = maxData
-        .map((p) => {
-          const parsed = parseInt(p.code, 10)
-          return isNaN(parsed) ? 0 : parsed
-        })
-        .filter((n) => n > 0)
-      
-      maxCode = codes.length > 0 ? Math.max(...codes) : 0
-      
-      let attempts = 0
-      let codeExists = true
-      
-      while (codeExists && attempts < 100) {
-        newCode = (maxCode + 1).toString()
-        
-        const { data: existingCheck } = await supabase
-          .from('products')
-          .select('id')
-          .eq('code', newCode)
-          .limit(1)
-        
-        if (!existingCheck || existingCheck.length === 0) {
-          codeExists = false
-        } else {
-          maxCode++
-          attempts++
-        }
-      }
-      
-      if (attempts >= 100) {
-        throw new Error('No se pudo encontrar un código disponible después de 100 intentos')
-      }
-      
-      console.log('Creating product with code:', newCode)
-    } catch (err) {
-      console.error('Error in code generation:', err)
-      throw err
-    }
-    
-    const productWithCode = { ...product, code: newCode }
-    
     const { data, error } = await supabase
       .from('products')
-      .insert([productWithCode])
+      .insert([product])
       .select()
       .single()
 

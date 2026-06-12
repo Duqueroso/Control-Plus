@@ -75,7 +75,6 @@ export default function InventoryPage() {
         sale_price: data.salePrice,
         stock: data.stock,
         min_stock: data.minStock,
-        code: '0',
         is_active: true,
       })
     },
@@ -209,7 +208,7 @@ export default function InventoryPage() {
     return allProducts.filter(
       (p) =>
         (showInactive || p.is_active) &&
-        (p.name.toLowerCase().includes(query) || p.code.toLowerCase().includes(query))
+        p.name.toLowerCase().includes(query)
     )
   }, [productsData.products, allProducts, searchQuery, showInactive])
 
@@ -248,13 +247,6 @@ export default function InventoryPage() {
         </div>
       ),
       size: 60,
-    },
-    {
-      accessorKey: 'code',
-      header: 'Código',
-      cell: ({ row }) => (
-        <span className="font-mono text-sm">{row.original.code}</span>
-      ),
     },
     {
       accessorKey: 'name',
