@@ -14,6 +14,13 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { ProductDialog } from '../components/product-dialog'
 import { CategoryDialog } from '../components/category-dialog'
 import { ImportDialog } from '../components/import-dialog'
@@ -33,6 +40,7 @@ function formatCurrency(value: number): string {
 export default function InventoryPage() {
   const queryClient = useQueryClient()
   const [searchQuery, setSearchQuery] = useState('')
+  const [selectedCategory, setSelectedCategory] = useState('')
   const [isProductDialogOpen, setIsProductDialogOpen] = useState(false)
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
@@ -201,27 +209,31 @@ export default function InventoryPage() {
   })
 
   const filteredProducts = useMemo(() => {
-    if (!searchQuery) {
-      return productsData.products
+    let products = productsData.products
+
+    if (searchQuery || selectedCategory) {
+      products = allProducts
     }
-    const query = searchQuery.toLowerCase()
-    return allProducts.filter(
-      (p) =>
-        (showInactive || p.is_active) &&
-        p.name.toLowerCase().includes(query)
-    )
-  }, [productsData.products, allProducts, searchQuery, showInactive])
+
+    return products.filter((p) => {
+      if (!showInactive && !p.is_active) return false
+      if (searchQuery && !p.name.toLowerCase().includes(searchQuery.toLowerCase())) return false
+      if (selectedCategory && p.category_id !== selectedCategory) return false
+      return true
+    })
+  }, [productsData.products, allProducts, searchQuery, selectedCategory, showInactive])
 
   const displayedProducts = useMemo(() => {
-    if (!searchQuery) {
+    const useFiltered = searchQuery || selectedCategory
+    if (!useFiltered) {
       return productsData.products
     }
     const start = (currentPage - 1) * PRODUCTS_PER_PAGE
     const end = start + PRODUCTS_PER_PAGE
     return filteredProducts.slice(start, end)
-  }, [searchQuery, currentPage, productsData.products, filteredProducts])
+  }, [searchQuery, selectedCategory, currentPage, productsData.products, filteredProducts])
 
-  const searchTotalPages = searchQuery ? Math.ceil(filteredProducts.length / PRODUCTS_PER_PAGE) : totalPages
+  const searchTotalPages = (searchQuery || selectedCategory) ? Math.ceil(filteredProducts.length / PRODUCTS_PER_PAGE) : totalPages
 
   const lowStockProducts = useMemo(() => {
     return allProducts.filter((p) => p.stock <= p.min_stock)
@@ -552,6 +564,17 @@ export default function InventoryPage() {
             className="pl-10 h-11 bg-card"
           />
         </div>
+        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+          <SelectTrigger className="w-[200px]">
+            <SelectValue placeholder="Todas las categorías" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">Todas las categorías</SelectItem>
+            {categories.map((cat) => (
+              <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="flex gap-2 border-b pb-0">
@@ -578,10 +601,10 @@ export default function InventoryPage() {
             data={displayedProducts}
             isLoading={isLoadingProducts}
           />
-          {(searchQuery ? searchTotalPages : totalPages) > 1 && (
+          {(searchQuery || selectedCategory ? searchTotalPages : totalPages) > 1 && (
             <div className="flex items-center justify-between py-4">
               <p className="text-sm text-muted-foreground">
-                Mostrando {searchQuery ? filteredProducts.length : (currentPage - 1) * PRODUCTS_PER_PAGE + 1}-{searchQuery ? Math.min(currentPage * PRODUCTS_PER_PAGE, filteredProducts.length) : Math.min(currentPage * PRODUCTS_PER_PAGE, totalProducts)} de {searchQuery ? filteredProducts.length : totalProducts} productos
+                Mostrando {searchQuery || selectedCategory ? filteredProducts.length : (currentPage - 1) * PRODUCTS_PER_PAGE + 1}-{searchQuery || selectedCategory ? Math.min(currentPage * PRODUCTS_PER_PAGE, filteredProducts.length) : Math.min(currentPage * PRODUCTS_PER_PAGE, totalProducts)} de {searchQuery || selectedCategory ? filteredProducts.length : totalProducts} productos
               </p>
               <div className="flex items-center gap-2">
                 <Button
@@ -593,13 +616,13 @@ export default function InventoryPage() {
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
                 <span className="text-sm font-medium">
-                  {currentPage} / {searchQuery ? searchTotalPages : totalPages}
+                  {currentPage} / {(searchQuery || selectedCategory) ? searchTotalPages : totalPages}
                 </span>
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setCurrentPage((p) => Math.min(searchQuery ? searchTotalPages : totalPages, p + 1))}
-                  disabled={currentPage >= (searchQuery ? searchTotalPages : totalPages)}
+                  onClick={() => setCurrentPage((p) => Math.min((searchQuery || selectedCategory) ? searchTotalPages : totalPages, p + 1))}
+                  disabled={currentPage >= ((searchQuery || selectedCategory) ? searchTotalPages : totalPages)}
                 >
                   <ChevronRight className="h-4 w-4" />
                 </Button>
