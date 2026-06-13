@@ -70,9 +70,11 @@ export const inventoryService = {
     min_stock: number
     is_active: boolean
   }): Promise<Product> {
+    const code = `PRD-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`
+
     const { data, error } = await supabase
       .from('products')
-      .insert([product])
+      .insert([{ ...product, code }])
       .select()
       .single()
 
