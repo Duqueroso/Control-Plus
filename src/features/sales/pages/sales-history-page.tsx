@@ -1,13 +1,21 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { Package, ArrowRight, XCircle, Search } from 'lucide-react'
+import { Package, ArrowRight, XCircle, Search, AlertTriangle } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog'
 import { salesService } from '../services/sales-service'
 import type { Sale } from '@/types'
+import { toast } from 'sonner'
 
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat('es-CO', {
@@ -41,13 +49,45 @@ const statusColors: Record<string, string> = {
 }
 
 export default function SalesHistoryPage() {
+  const queryClient = useQueryClient()
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null)
+  const [showCancelDialog, setShowCancelDialog] = useState(false)
+  const [isCancelling, setIsCancelling] = useState(false)
 
   const { data: sales = [], isLoading } = useQuery({
     queryKey: ['sales'],
     queryFn: salesService.getSales,
   })
+
+  const cancelSaleMutation = useMutation({
+    mutationFn: () => {
+      if (!selectedSale) throw new Error('No sale selected')
+      return salesService.cancelSale(
+        selectedSale.id,
+        selectedSale.sale_items?.map((item) => ({
+          product_id: item.product_id,
+          quantity: item.quantity,
+        })) || []
+      )
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sales'] })
+      queryClient.invalidateQueries({ queryKey: ['products-all'] })
+      toast.success('Venta cancelada y stock revertido')
+      setShowCancelDialog(false)
+      setSelectedSale(null)
+    },
+    onError: (error: Error) => {
+      toast.error(`Error: ${error.message}`)
+      setIsCancelling(false)
+    },
+  })
+
+  const handleCancelSale = () => {
+    setIsCancelling(true)
+    cancelSaleMutation.mutate()
+  }
 
   const filteredSales = searchQuery
     ? sales.filter(
@@ -236,10 +276,46 @@ export default function SalesHistoryPage() {
                   {formatCurrency(Number(selectedSale.total))}
                 </span>
               </div>
+
+              {selectedSale.status === 'completed' && (
+                <div className="border-t pt-4">
+                  <Button
+                    variant="destructive"
+                    className="w-full"
+                    onClick={() => setShowCancelDialog(true)}
+                  >
+                    <AlertTriangle className="h-4 w-4 mr-2" />
+                    Cancelar Venta
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
       )}
+
+      <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>¿Cancelar esta venta?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Esta acción revertirá el stock de {selectedSale?.sale_items?.length || 0} productos y marcará la venta como cancelada. Esta acción no se puede deshacer.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCancelDialog(false)}>
+              Volver
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleCancelSale}
+              disabled={isCancelling}
+            >
+              {isCancelling ? 'Cancelando...' : 'Cancelar Venta'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
