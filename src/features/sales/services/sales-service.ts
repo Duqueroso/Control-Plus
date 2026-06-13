@@ -107,30 +107,6 @@ export const salesService = {
     }
   },
 
-  async cancelSale(id: string): Promise<void> {
-    const { data: sale } = await supabase
-      .from('sales')
-      .select('*, sale_items(*)')
-      .eq('id', id)
-      .single()
-
-    if (!sale) throw new Error('Venta no encontrada')
-
-    for (const item of sale.sale_items || []) {
-      await supabase.rpc('increment_stock', {
-        product_id: item.product_id,
-        quantity: item.quantity,
-      })
-    }
-
-    const { error } = await supabase
-      .from('sales')
-      .update({ status: 'cancelled' })
-      .eq('id', id)
-
-    if (error) throw error
-  },
-
   async getTodaySales(): Promise<Sale[]> {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
