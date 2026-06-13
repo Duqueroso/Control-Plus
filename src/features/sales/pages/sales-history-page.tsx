@@ -215,11 +215,11 @@ export default function SalesHistoryPage() {
               <div className="border-t pt-4">
                 <h4 className="font-medium mb-2">Productos</h4>
                 <div className="space-y-2">
-                  {(selectedSale.sale_items || []).map((item: { product_id: string; quantity: number; total: number }, index: number) => (
+                  {(selectedSale.sale_items || []).map((item: { product_id: string; quantity: number; total: number; products?: { name: string } }, index: number) => (
                     <div key={index} className="flex items-center justify-between text-sm">
                       <div className="flex items-center gap-2">
                         <Package className="h-4 w-4 text-muted-foreground" />
-                        <span>{item.product_id.slice(0, 8)}...</span>
+                        <span>{item.products?.name || item.product_id.slice(0, 8)}...</span>
                       </div>
                       <div className="text-right">
                         <span className="text-muted-foreground">x{item.quantity}</span>

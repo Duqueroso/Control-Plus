@@ -18,7 +18,7 @@ export const salesService = {
   async getSales(): Promise<Sale[]> {
     const { data, error } = await supabase
       .from('sales')
-      .select('*, sale_items(*)')
+      .select('*, sale_items(*, products(name))')
       .order('created_at', { ascending: false })
 
     if (error) throw error
@@ -28,7 +28,7 @@ export const salesService = {
   async getSale(id: string): Promise<Sale | null> {
     const { data, error } = await supabase
       .from('sales')
-      .select('*, sale_items(*)')
+      .select('*, sale_items(*, products(name))')
       .eq('id', id)
       .single()
 
