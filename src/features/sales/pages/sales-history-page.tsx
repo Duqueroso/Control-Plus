@@ -74,6 +74,14 @@ export default function SalesHistoryPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['sales'] })
       queryClient.invalidateQueries({ queryKey: ['products-all'] })
+
+      queryClient.setQueryData<Sale[]>(['sales'], (oldData) => {
+        if (!oldData || !selectedSale) return oldData
+        return oldData.map((sale) =>
+          sale.id === selectedSale.id ? { ...sale, status: 'cancelled' as const } : sale
+        )
+      })
+
       toast.success('Venta cancelada y stock revertido')
       if (selectedSale) {
         setSelectedSale({ ...selectedSale, status: 'cancelled' })
