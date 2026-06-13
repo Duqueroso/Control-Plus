@@ -218,7 +218,7 @@ export default function InventoryPage() {
     return products.filter((p) => {
       if (!showInactive && !p.is_active) return false
       if (searchQuery && !p.name.toLowerCase().includes(searchQuery.toLowerCase())) return false
-      if (selectedCategory && p.category_id !== selectedCategory) return false
+      if (selectedCategory && selectedCategory !== 'all' && p.category_id !== selectedCategory) return false
       return true
     })
   }, [productsData.products, allProducts, searchQuery, selectedCategory, showInactive])
@@ -569,7 +569,7 @@ export default function InventoryPage() {
             <SelectValue placeholder="Todas las categorías" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Todas las categorías</SelectItem>
+            <SelectItem value="all">Todas las categorías</SelectItem>
             {categories.map((cat) => (
               <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
             ))}
