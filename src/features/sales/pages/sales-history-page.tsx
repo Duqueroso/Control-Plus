@@ -75,8 +75,10 @@ export default function SalesHistoryPage() {
       queryClient.invalidateQueries({ queryKey: ['sales'] })
       queryClient.invalidateQueries({ queryKey: ['products-all'] })
       toast.success('Venta cancelada y stock revertido')
+      if (selectedSale) {
+        setSelectedSale({ ...selectedSale, status: 'cancelled' })
+      }
       setShowCancelDialog(false)
-      setSelectedSale(null)
     },
     onError: (error: Error) => {
       toast.error(`Error: ${error.message}`)
