@@ -71,10 +71,7 @@ export default function SalesHistoryPage() {
         })) || []
       )
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sales'] })
-      queryClient.invalidateQueries({ queryKey: ['products-all'] })
-
+    onSuccess: async () => {
       queryClient.setQueryData<Sale[]>(['sales'], (oldData) => {
         if (!oldData || !selectedSale) return oldData
         return oldData.map((sale) =>
@@ -82,11 +79,16 @@ export default function SalesHistoryPage() {
         )
       })
 
-      toast.success('Venta cancelada y stock revertido')
       if (selectedSale) {
         setSelectedSale({ ...selectedSale, status: 'cancelled' })
       }
+
+      await queryClient.invalidateQueries({ queryKey: ['products-all'] })
+      await queryClient.invalidateQueries({ queryKey: ['sales'] })
+
+      toast.success('Venta cancelada y stock revertido')
       setShowCancelDialog(false)
+      setIsCancelling(false)
     },
     onError: (error: Error) => {
       toast.error(`Error: ${error.message}`)
