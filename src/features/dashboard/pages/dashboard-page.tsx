@@ -108,7 +108,16 @@ export default function DashboardPage() {
   })
   const monthTotal = monthSales.reduce((acc, s) => acc + Number(s.total), 0)
 
-  const monthlyProfit = monthTotal * 0.25
+  const monthlyProfit = monthSales.reduce((acc, sale) => {
+    return acc + (sale.sale_items || []).reduce((itemAcc, item) => {
+      const purchasePrice = (item as { products?: { purchase_price: number } }).products?.purchase_price || 0
+      const salePrice = Number(item.unit_price)
+      const quantity = Number(item.quantity)
+      return itemAcc + ((salePrice - purchasePrice) * quantity)
+    }, 0)
+  }, 0)
+
+  const profitMargin = monthTotal > 0 ? ((monthlyProfit / monthTotal) * 100).toFixed(1) : '0'
 
   const lowStockProducts = products.filter((p) => p.stock <= p.min_stock)
 
@@ -161,7 +170,7 @@ export default function DashboardPage() {
           title="Utilidad estimada"
           value={formatCurrency(monthlyProfit)}
           icon={TrendingUp}
-          trend="Margen ~25%"
+          trend={`Margen ${profitMargin}%`}
           trendUp
           isLoading={isLoadingSales}
           accentColor="#7BBDE8"
