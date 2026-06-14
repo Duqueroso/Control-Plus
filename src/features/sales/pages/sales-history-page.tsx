@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Package, ArrowRight, XCircle, Search, AlertTriangle } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -54,11 +54,16 @@ export default function SalesHistoryPage() {
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null)
   const [showCancelDialog, setShowCancelDialog] = useState(false)
   const [isCancelling, setIsCancelling] = useState(false)
+  const [localSales, setLocalSales] = useState<Sale[]>([])
 
   const { data: sales = [], isLoading } = useQuery({
     queryKey: ['sales'],
     queryFn: salesService.getSales,
   })
+
+  useEffect(() => {
+    setLocalSales(sales)
+  }, [sales])
 
   const cancelSaleMutation = useMutation({
     mutationFn: () => {
@@ -72,19 +77,19 @@ export default function SalesHistoryPage() {
       )
     },
     onSuccess: async () => {
-      queryClient.setQueryData<Sale[]>(['sales'], (oldData) => {
-        if (!oldData || !selectedSale) return oldData
-        return oldData.map((sale) =>
-          sale.id === selectedSale.id ? { ...sale, status: 'cancelled' as const } : sale
+      const saleIdToCancel = selectedSale?.id
+
+      setLocalSales((prev) =>
+        prev.map((sale) =>
+          sale.id === saleIdToCancel ? { ...sale, status: 'cancelled' as const } : sale
         )
-      })
+      )
 
       if (selectedSale) {
         setSelectedSale({ ...selectedSale, status: 'cancelled' })
       }
 
       await queryClient.invalidateQueries({ queryKey: ['products-all'] })
-      await queryClient.invalidateQueries({ queryKey: ['sales'] })
 
       toast.success('Venta cancelada y stock revertido')
       setShowCancelDialog(false)
@@ -102,18 +107,18 @@ export default function SalesHistoryPage() {
   }
 
   const filteredSales = searchQuery
-    ? sales.filter(
+    ? localSales.filter(
         (sale) =>
           sale.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
           sale.total.toString().includes(searchQuery)
       )
-    : sales
+    : localSales
 
-  const totalSales = sales.filter((s) => s.status === 'completed').length
-  const totalAmount = sales
+  const totalSales = localSales.filter((s) => s.status === 'completed').length
+  const totalAmount = localSales
     .filter((s) => s.status === 'completed')
     .reduce((acc, s) => acc + Number(s.total), 0)
-  const cancelledAmount = sales
+  const cancelledAmount = localSales
     .filter((s) => s.status === 'cancelled')
     .reduce((acc, s) => acc + Number(s.total), 0)
 
