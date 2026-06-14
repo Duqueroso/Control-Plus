@@ -79,19 +79,29 @@ export default function SalesHistoryPage() {
     onSuccess: () => {
       const saleIdToCancel = selectedSale?.id
 
-      queryClient.invalidateQueries({ queryKey: ['products-all'] })
-      queryClient.invalidateQueries({ queryKey: ['sales'] }).then(() => {
-        const updatedSales = queryClient.getQueryData<Sale[]>(['sales'])
-        if (updatedSales) {
-          setLocalSales(updatedSales)
-          if (saleIdToCancel) {
-            const updatedSale = updatedSales.find((s: Sale) => s.id === saleIdToCancel)
-            if (updatedSale) {
-              setSelectedSale(updatedSale)
-            }
-          }
-        }
+      queryClient.setQueryData<Sale[]>(['sales'], (oldData) => {
+        if (!oldData) return []
+        return oldData.map((sale) =>
+          sale.id === saleIdToCancel ? { ...sale, status: 'cancelled' as const } : sale
+        )
       })
+
+      queryClient.setQueryData<Sale[]>(['products-all'], (oldData) => {
+        if (!oldData) return []
+        return oldData
+      })
+
+      const updatedSales = queryClient.getQueryData<Sale[]>(['sales'])
+      if (updatedSales) {
+        setLocalSales(updatedSales)
+      }
+
+      if (saleIdToCancel && updatedSales) {
+        const updatedSale = updatedSales.find((s: Sale) => s.id === saleIdToCancel)
+        if (updatedSale) {
+          setSelectedSale(updatedSale)
+        }
+      }
 
       toast.success('Venta cancelada y stock revertido')
       setShowCancelDialog(false)
