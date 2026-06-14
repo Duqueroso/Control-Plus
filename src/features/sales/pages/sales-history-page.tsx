@@ -81,7 +81,7 @@ export default function SalesHistoryPage() {
 
       await queryClient.invalidateQueries({ queryKey: ['products-all'] })
 
-      const { data: freshSales } = await queryClient.fetchQuery({
+      const freshSales = await queryClient.fetchQuery<Sale[]>({
         queryKey: ['sales'],
         queryFn: salesService.getSales,
       })
@@ -89,7 +89,7 @@ export default function SalesHistoryPage() {
       setLocalSales(freshSales || [])
 
       if (saleIdToCancel && freshSales) {
-        const updatedSale = freshSales.find((s) => s.id === saleIdToCancel)
+        const updatedSale = freshSales.find((s: Sale) => s.id === saleIdToCancel)
         if (updatedSale) {
           setSelectedSale(updatedSale)
         }
