@@ -1,12 +1,13 @@
 import { useQuery } from '@tanstack/react-query'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { DollarSign, TrendingUp, Package, AlertTriangle, FileSpreadsheet } from 'lucide-react'
+import { DollarSign, TrendingUp, Package, AlertTriangle, FileSpreadsheet, Receipt } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 import { inventoryService } from '@/features/inventory/services/inventory-service'
 import { salesService } from '@/features/sales/services/sales-service'
 import { cashRegisterService } from '@/features/cash-register/services/cash-register-service'
 import { ReportDialog } from '@/features/reports/components/report-dialog'
+import { supabase } from '@/lib/supabase'
 import { useState } from 'react'
 
 interface StatCardProps {
@@ -90,6 +91,18 @@ export default function DashboardPage() {
     enabled: !!cashRegister,
   })
 
+  const { data: expenses = [], isLoading: isLoadingExpenses } = useQuery({
+    queryKey: ['expenses'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('expenses')
+        .select('*')
+        .order('created_at', { ascending: false })
+      if (error) throw error
+      return data || []
+    },
+  })
+
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
@@ -118,6 +131,12 @@ export default function DashboardPage() {
   }, 0)
 
   const profitMargin = monthTotal > 0 ? ((monthlyProfit / monthTotal) * 100).toFixed(1) : '0'
+
+  const totalSalesAmount = sales
+    .filter((s) => s.status === 'completed')
+    .reduce((acc, s) => acc + Number(s.total), 0)
+
+  const totalExpenses = expenses.reduce((acc, e) => acc + Number(e.amount), 0)
 
   const lowStockProducts = products.filter((p) => p.stock <= p.min_stock)
 
@@ -181,6 +200,25 @@ export default function DashboardPage() {
           icon={Package}
           isLoading={false}
           accentColor="#4E84A2"
+        />
+      </div>
+
+      <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          title="Ventas totales"
+          value={formatCurrency(totalSalesAmount)}
+          icon={DollarSign}
+          trend={`${sales.filter((s) => s.status === 'completed').length} ventas`}
+          isLoading={isLoadingSales}
+          accentColor="#0D7C3E"
+        />
+        <StatCard
+          title="Gastos totales"
+          value={formatCurrency(totalExpenses)}
+          icon={Receipt}
+          trend={`${expenses.length} gastos`}
+          isLoading={isLoadingExpenses}
+          accentColor="#C73E3E"
         />
       </div>
 
