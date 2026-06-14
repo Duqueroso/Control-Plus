@@ -136,19 +136,30 @@ export const salesService = {
   },
 
   async cancelSale(saleId: string, items: { product_id: string; quantity: number }[]): Promise<void> {
+    console.log('SERVICE cancelSale - saleId:', saleId)
+    console.log('SERVICE cancelSale - items:', items)
+
     for (const item of items) {
+      console.log('SERVICE - calling increment_stock for:', item.product_id, item.quantity)
       const { error: rpcError } = await supabase.rpc('increment_stock', {
         product_id: item.product_id,
         quantity: item.quantity,
       })
-      if (rpcError) throw new Error(`Error revertiendo stock: ${rpcError.message}`)
+      if (rpcError) {
+        console.error('SERVICE - RPC error:', rpcError)
+        throw new Error(`Error revertiendo stock: ${rpcError.message}`)
+      }
     }
 
+    console.log('SERVICE - calling update for sale:', saleId)
     const { error } = await supabase
       .from('sales')
       .update({ status: 'cancelled' })
       .eq('id', saleId)
 
+    console.log('SERVICE - update result error:', error)
     if (error) throw error
+
+    console.log('SERVICE - cancelSale completed successfully')
   },
 }
