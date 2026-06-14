@@ -68,15 +68,17 @@ export default function SalesHistoryPage() {
   const cancelSaleMutation = useMutation({
     mutationFn: () => {
       if (!selectedSale) throw new Error('No sale selected')
-      return salesService.cancelSale(
-        selectedSale.id,
-        selectedSale.sale_items?.map((item) => ({
-          product_id: item.product_id,
-          quantity: item.quantity,
-        })) || []
-      )
+      console.log('CANCEL SALE - selectedSale:', selectedSale)
+      console.log('CANCEL SALE - sale_items:', selectedSale.sale_items)
+      const items = selectedSale.sale_items?.map((item) => ({
+        product_id: item.product_id,
+        quantity: item.quantity,
+      })) || []
+      console.log('CANCEL SALE - items to cancel:', items)
+      return salesService.cancelSale(selectedSale.id, items)
     },
     onSuccess: async () => {
+      console.log('CANCEL SALE - onSuccess called')
       const saleIdToCancel = selectedSale?.id
 
       await queryClient.invalidateQueries({ queryKey: ['products-all'] })
@@ -86,6 +88,7 @@ export default function SalesHistoryPage() {
         queryFn: salesService.getSales,
       })
 
+      console.log('CANCEL SALE - freshSales:', freshSales)
       setLocalSales(freshSales || [])
 
       if (saleIdToCancel && freshSales) {
@@ -100,6 +103,7 @@ export default function SalesHistoryPage() {
       setIsCancelling(false)
     },
     onError: (error: Error) => {
+      console.error('CANCEL SALE - onError:', error)
       toast.error(`Error: ${error.message}`)
       setIsCancelling(false)
     },
