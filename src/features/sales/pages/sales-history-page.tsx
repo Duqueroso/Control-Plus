@@ -79,17 +79,21 @@ export default function SalesHistoryPage() {
     onSuccess: async () => {
       const saleIdToCancel = selectedSale?.id
 
-      setLocalSales((prev) =>
-        prev.map((sale) =>
-          sale.id === saleIdToCancel ? { ...sale, status: 'cancelled' as const } : sale
-        )
-      )
-
-      if (selectedSale) {
-        setSelectedSale({ ...selectedSale, status: 'cancelled' })
-      }
-
       await queryClient.invalidateQueries({ queryKey: ['products-all'] })
+
+      const { data: freshSales } = await queryClient.fetchQuery({
+        queryKey: ['sales'],
+        queryFn: salesService.getSales,
+      })
+
+      setLocalSales(freshSales || [])
+
+      if (saleIdToCancel && freshSales) {
+        const updatedSale = freshSales.find((s) => s.id === saleIdToCancel)
+        if (updatedSale) {
+          setSelectedSale(updatedSale)
+        }
+      }
 
       toast.success('Venta cancelada y stock revertido')
       setShowCancelDialog(false)
