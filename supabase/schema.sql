@@ -270,6 +270,22 @@ CREATE POLICY "Employees can create sales"
     TO authenticated
     WITH CHECK (user_id = auth.uid());
 
+CREATE POLICY "Users can update own sales"
+    ON public.sales FOR UPDATE
+    TO authenticated
+    USING (
+      user_id = auth.uid() OR EXISTS (
+        SELECT 1 FROM public.profiles
+        WHERE id = auth.uid() AND role = 'admin'
+      )
+    )
+    WITH CHECK (
+      user_id = auth.uid() OR EXISTS (
+        SELECT 1 FROM public.profiles
+        WHERE id = auth.uid() AND role = 'admin'
+      )
+    );
+
 -- Sale items: follows sales access
 CREATE POLICY "Sale items are viewable by authenticated users"
     ON public.sale_items FOR SELECT
