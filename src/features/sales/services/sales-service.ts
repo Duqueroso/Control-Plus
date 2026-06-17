@@ -87,7 +87,7 @@ export const salesService = {
       })
 
       if (updateError) {
-        console.error('Error updating stock:', updateError)
+        throw new Error(`Error decrementando stock: ${updateError.message}`)
       }
     }
 
@@ -142,6 +142,22 @@ export const salesService = {
         quantity: item.quantity,
       })
       if (rpcError) throw new Error(`Error revertiendo stock: ${rpcError.message}`)
+    }
+
+    const { data: sale } = await supabase
+      .from('sales')
+      .select('total')
+      .eq('id', saleId)
+      .single()
+
+    const cashRegister = await getCurrentCashRegister()
+    if (cashRegister && sale) {
+      await supabase.from('cash_movements').insert({
+        cash_register_id: cashRegister.id,
+        type: 'expense',
+        amount: sale.total,
+        description: `Venta cancelada - ID: ${saleId}`,
+      })
     }
 
     const { error } = await supabase

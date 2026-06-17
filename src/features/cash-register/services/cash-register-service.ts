@@ -31,12 +31,13 @@ export const cashRegisterService = {
     return data
   },
 
-  async closeCashRegister(id: string, _closingAmount: number): Promise<CashRegister> {
+  async closeCashRegister(id: string, closingAmount: number): Promise<CashRegister> {
     const { data, error } = await supabase
       .from('cash_registers')
       .update({
         status: 'closed',
         closed_at: new Date().toISOString(),
+        closing_amount: closingAmount,
       })
       .eq('id', id)
       .select()

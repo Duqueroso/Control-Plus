@@ -97,6 +97,7 @@ CREATE TABLE public.cash_registers (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL REFERENCES public.profiles(id),
     initial_amount NUMERIC(12, 2) NOT NULL DEFAULT 0,
+    closing_amount NUMERIC(12, 2),
     status cash_register_status NOT NULL DEFAULT 'closed',
     opened_at TIMESTAMPTZ,
     closed_at TIMESTAMPTZ,
@@ -336,12 +337,19 @@ CREATE POLICY "Expenses are viewable by authenticated users"
     TO authenticated
     USING (true);
 
-CREATE POLICY "Employees can manage expenses"
+CREATE POLICY "Employees can manage own expenses"
     ON public.expenses FOR ALL
     TO authenticated
-    USING (user_id = auth.uid() OR EXISTS (
-        SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'
-    ));
+    USING (
+        user_id = auth.uid() OR EXISTS (
+            SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'
+        )
+    )
+    WITH CHECK (
+        user_id = auth.uid() OR EXISTS (
+            SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'
+        )
+    );
 
 -- Settings: admins only
 CREATE POLICY "Admins can manage settings"
