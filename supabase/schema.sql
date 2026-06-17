@@ -112,6 +112,7 @@ CREATE TABLE public.cash_registers (
 CREATE TABLE public.cash_movements (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     cash_register_id UUID NOT NULL REFERENCES public.cash_registers(id),
+    sale_id UUID REFERENCES public.sales(id),
     type cash_movement_type NOT NULL,
     amount NUMERIC(12, 2) NOT NULL,
     description TEXT,

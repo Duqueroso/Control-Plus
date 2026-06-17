@@ -95,6 +95,7 @@ export const salesService = {
     if (cashRegister) {
       await supabase.from('cash_movements').insert({
         cash_register_id: cashRegister.id,
+        sale_id: saleData.id,
         type: 'income',
         amount: sale.total,
         description: 'Venta',
@@ -144,21 +145,10 @@ export const salesService = {
       if (rpcError) throw new Error(`Error revertiendo stock: ${rpcError.message}`)
     }
 
-    const { data: sale } = await supabase
-      .from('sales')
-      .select('total')
-      .eq('id', saleId)
-      .single()
-
-    const cashRegister = await getCurrentCashRegister()
-    if (cashRegister && sale) {
-      await supabase.from('cash_movements').insert({
-        cash_register_id: cashRegister.id,
-        type: 'expense',
-        amount: sale.total,
-        description: `Venta cancelada - ID: ${saleId}`,
-      })
-    }
+    await supabase
+      .from('cash_movements')
+      .delete()
+      .eq('sale_id', saleId)
 
     const { error } = await supabase
       .from('sales')
