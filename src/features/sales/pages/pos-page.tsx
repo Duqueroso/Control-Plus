@@ -74,8 +74,9 @@ export default function POSPage() {
 
   const createSaleMutation = useMutation({
     mutationFn: salesService.createSale,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['products'] })
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['products-all'] })
+      await queryClient.refetchQueries({ queryKey: ['products-all'] })
       queryClient.invalidateQueries({ queryKey: ['sales'] })
       queryClient.invalidateQueries({ queryKey: ['cash-register-movements'] })
       toast.success('Venta realizada exitosamente')
