@@ -242,18 +242,18 @@ export default function InventoryPage() {
   const productColumns: ColumnDef<Product, unknown>[] = [
     {
       accessorKey: 'image_url',
-      header: '',
+header: '',
       cell: ({ row }) => (
-        <div className="w-10 h-10 rounded-md overflow-hidden bg-muted flex-shrink-0">
+        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-md overflow-hidden bg-muted flex-shrink-0">
           {row.original.image_url ? (
             <img
               src={row.original.image_url}
               alt={row.original.name}
-              className="w-full h-full object-cover"
+              className="object-cover w-full h-full"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-              <Package className="h-4 w-4" />
+              <Package className="h-4 w-4 sm:h-5 sm:w-5" />
             </div>
           )}
         </div>

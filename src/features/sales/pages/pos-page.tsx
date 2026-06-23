@@ -245,7 +245,7 @@ export default function POSPage() {
                 className={`cursor-pointer hover:shadow-lg hover:border-primary/50 transition-all duration-200 overflow-hidden ${!isCashRegisterOpen ? 'opacity-50 pointer-events-none' : ''}`}
                 onClick={() => addToCart(product)}
               >
-                <div className="aspect-square w-full bg-muted/30 relative overflow-hidden">
+                <div className="h-32 sm:h-40 w-full bg-muted/30 relative overflow-hidden">
                   {product.image_url ? (
                     <img
                       src={product.image_url}
@@ -253,8 +253,8 @@ export default function POSPage() {
                       className="object-cover w-full h-full"
                     />
                   ) : (
-                    <div className="flex items-center justify-center w-full h-full">
-                      <ShoppingCart className="h-12 w-12 text-muted-foreground/30" />
+                    <div className="flex items-center justify-center w-full h-full bg-muted">
+                      <ShoppingCart className="h-8 w-8 sm:h-12 sm:w-12 text-muted-foreground/30" />
                     </div>
                   )}
                 </div>
@@ -346,7 +346,7 @@ export default function POSPage() {
                       key={item.product.id}
                       className="flex items-center gap-3 p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors"
                     >
-                      <div className="w-14 h-14 rounded-lg bg-muted overflow-hidden flex-shrink-0">
+                      <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-lg bg-muted overflow-hidden flex-shrink-0">
                         {item.product.image_url ? (
                           <img
                             src={item.product.image_url}
@@ -355,7 +355,7 @@ export default function POSPage() {
                           />
                         ) : (
                           <div className="flex items-center justify-center w-full h-full">
-                            <ShoppingCart className="h-5 w-5 text-muted-foreground/30" />
+                            <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground/30" />
                           </div>
                         )}
                       </div>
