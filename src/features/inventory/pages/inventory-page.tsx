@@ -81,8 +81,9 @@ export default function InventoryPage() {
         category_id: data.categoryId,
         purchase_price: data.purchasePrice,
         sale_price: data.salePrice,
-        stock: data.stock,
-        min_stock: data.minStock,
+        stock: data.stock ?? 0,
+        min_stock: data.minStock ?? 5,
+        inventory_tracked: data.inventoryTracked ?? true,
         is_active: true,
       })
     },
@@ -106,8 +107,9 @@ export default function InventoryPage() {
         category_id: data.categoryId,
         purchase_price: data.purchasePrice,
         sale_price: data.salePrice,
-        stock: data.stock,
-        min_stock: data.minStock,
+        stock: data.stock ?? 0,
+        min_stock: data.minStock ?? 5,
+        inventory_tracked: data.inventoryTracked ?? true,
       })
     },
     onSuccess: () => {
