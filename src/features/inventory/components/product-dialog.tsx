@@ -52,6 +52,7 @@ export function ProductDialog({
       salePrice: 0,
       stock: 0,
       minStock: 5,
+      inventoryTracked: true,
     },
   })
 
@@ -66,6 +67,7 @@ export function ProductDialog({
         salePrice: product.sale_price,
         stock: product.stock,
         minStock: product.min_stock,
+        inventoryTracked: product.inventory_tracked ?? true,
       })
     } else {
       form.reset({
@@ -77,12 +79,14 @@ export function ProductDialog({
         salePrice: 0,
         stock: 0,
         minStock: 5,
+        inventoryTracked: true,
       })
     }
   }, [product, form])
 
   const purchasePrice = form.watch('purchasePrice')
   const salePrice = form.watch('salePrice')
+  const inventoryTracked = form.watch('inventoryTracked')
   const suggestedMargin = purchasePrice > 0 ? ((salePrice - purchasePrice) / purchasePrice * 100).toFixed(1) : '0'
 
   return (
@@ -180,33 +184,55 @@ export function ProductDialog({
             </span>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="stock">Stock *</Label>
-              <Input
-                id="stock"
-                type="number"
-                min="0"
-                {...form.register('stock', { valueAsNumber: true })}
-              />
-              {form.formState.errors.stock && (
-                <p className="text-sm text-destructive">{form.formState.errors.stock.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="minStock">Stock Mínimo *</Label>
-              <Input
-                id="minStock"
-                type="number"
-                min="0"
-                {...form.register('minStock', { valueAsNumber: true })}
-              />
-              {form.formState.errors.minStock && (
-                <p className="text-sm text-destructive">{form.formState.errors.minStock.message}</p>
-              )}
+          <div className="flex items-center gap-3 border rounded-md p-3">
+            <input
+              type="checkbox"
+              id="inventoryTracked"
+              checked={inventoryTracked}
+              onChange={(e) => form.setValue('inventoryTracked', e.target.checked)}
+              className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+            />
+            <div className="flex-1">
+              <Label htmlFor="inventoryTracked" className="text-sm font-medium cursor-pointer">
+                Controlar inventario
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                {inventoryTracked
+                  ? 'El stock se decrementará con cada venta'
+                  : 'No se controlará stock - útil para servicios o productos sin inventario'}
+              </p>
             </div>
           </div>
+
+          {inventoryTracked && (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="stock">Stock *</Label>
+                <Input
+                  id="stock"
+                  type="number"
+                  min="0"
+                  {...form.register('stock', { valueAsNumber: true })}
+                />
+                {form.formState.errors.stock && (
+                  <p className="text-sm text-destructive">{form.formState.errors.stock.message}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="minStock">Stock Mínimo *</Label>
+                <Input
+                  id="minStock"
+                  type="number"
+                  min="0"
+                  {...form.register('minStock', { valueAsNumber: true })}
+                />
+                {form.formState.errors.minStock && (
+                  <p className="text-sm text-destructive">{form.formState.errors.minStock.message}</p>
+                )}
+              </div>
+            </div>
+          )}
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

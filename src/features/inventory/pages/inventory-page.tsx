@@ -236,7 +236,7 @@ export default function InventoryPage() {
   const searchTotalPages = (searchQuery || selectedCategory) ? Math.ceil(filteredProducts.length / PRODUCTS_PER_PAGE) : totalPages
 
   const lowStockProducts = useMemo(() => {
-    return allProducts.filter((p) => p.stock <= p.min_stock)
+    return allProducts.filter((p) => p.inventory_tracked !== false && p.stock <= p.min_stock)
   }, [allProducts])
 
   const productColumns: ColumnDef<Product, unknown>[] = [
@@ -285,6 +285,18 @@ header: '',
       header: 'Stock',
       cell: ({ row }) => {
         const isLow = row.original.stock <= row.original.min_stock
+        const inventoryTracked = row.original.inventory_tracked !== false
+        const unitsSold = row.original.units_sold || 0
+
+        if (!inventoryTracked) {
+          return (
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground font-medium">∞</span>
+              <span className="text-xs text-muted-foreground">({unitsSold} vendidos)</span>
+            </div>
+          )
+        }
+
         return (
           <div className="flex items-center gap-2">
             <span className={isLow ? 'text-destructive font-medium' : ''}>

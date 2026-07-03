@@ -81,13 +81,21 @@ export const salesService = {
     if (itemsError) throw itemsError
 
     for (const item of sale.items) {
-      const { error: updateError } = await supabase.rpc('decrement_stock', {
-        product_id: item.productId,
-        quantity: item.quantity,
-      })
+      const { data: product } = await supabase
+        .from('products')
+        .select('inventory_tracked')
+        .eq('id', item.productId)
+        .single()
 
-      if (updateError) {
-        throw new Error(`Error decrementando stock: ${updateError.message}`)
+      if (product?.inventory_tracked !== false) {
+        const { error: updateError } = await supabase.rpc('decrement_stock', {
+          product_id: item.productId,
+          quantity: item.quantity,
+        })
+
+        if (updateError) {
+          throw new Error(`Error decrementando stock: ${updateError.message}`)
+        }
       }
     }
 
@@ -138,11 +146,19 @@ export const salesService = {
 
   async cancelSale(saleId: string, items: { product_id: string; quantity: number }[]): Promise<void> {
     for (const item of items) {
-      const { error: rpcError } = await supabase.rpc('increment_stock', {
-        product_id: item.product_id,
-        quantity: item.quantity,
-      })
-      if (rpcError) throw new Error(`Error revertiendo stock: ${rpcError.message}`)
+      const { data: product } = await supabase
+        .from('products')
+        .select('inventory_tracked')
+        .eq('id', item.product_id)
+        .single()
+
+      if (product?.inventory_tracked !== false) {
+        const { error: rpcError } = await supabase.rpc('increment_stock', {
+          product_id: item.product_id,
+          quantity: item.quantity,
+        })
+        if (rpcError) throw new Error(`Error revertiendo stock: ${rpcError.message}`)
+      }
     }
 
     await supabase

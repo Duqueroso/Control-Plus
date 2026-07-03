@@ -29,7 +29,9 @@ export interface Product extends BaseEntity {
   sale_price: number
   stock: number
   min_stock: number
+  inventory_tracked: boolean
   is_active: boolean
+  units_sold?: number
 }
 
 export interface Category extends BaseEntity {

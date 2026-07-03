@@ -26,17 +26,32 @@ export const inventoryService = {
   async getAllProducts(): Promise<Product[]> {
     const { data, error } = await supabase
       .from('products')
-      .select('*, categories(name)')
+      .select('*, categories(name), sale_items(count)')
 
     if (error) throw error
-    
+
     const products = (data || []).sort((a, b) => {
       const codeA = parseInt(a.code, 10) || 0
       const codeB = parseInt(b.code, 10) || 0
       return codeA - codeB
     })
-    
-    return products
+
+    const productsWithUnitsSold = await Promise.all(
+      products.map(async (product) => {
+        if (!product.inventory_tracked) {
+          const { data: saleItems } = await supabase
+            .from('sale_items')
+            .select('quantity')
+            .eq('product_id', product.id)
+
+          const unitsSold = saleItems?.reduce((acc, item) => acc + (item.quantity || 0), 0) || 0
+          return { ...product, units_sold: unitsSold }
+        }
+        return { ...product, units_sold: 0 }
+      })
+    )
+
+    return productsWithUnitsSold
   },
 
   async getAllProductsCount(): Promise<number> {
@@ -68,6 +83,7 @@ export const inventoryService = {
     sale_price: number
     stock: number
     min_stock: number
+    inventory_tracked: boolean
     is_active: boolean
   }): Promise<Product> {
     const code = `PRD-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`

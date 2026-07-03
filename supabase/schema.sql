@@ -56,6 +56,7 @@ CREATE TABLE public.products (
     sale_price NUMERIC(12, 2) NOT NULL DEFAULT 0,
     stock INTEGER NOT NULL DEFAULT 0,
     min_stock INTEGER NOT NULL DEFAULT 5,
+    inventory_tracked BOOLEAN NOT NULL DEFAULT true,
     is_active BOOLEAN NOT NULL DEFAULT true,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
