@@ -91,12 +91,12 @@ export default function POSPage() {
   })
 
   const filteredProducts = useMemo(() => {
-    if (!searchQuery) return products.filter((p) => p.is_active && p.stock > 0)
+    if (!searchQuery) return products.filter((p) => p.is_active && (p.inventory_tracked === false || p.stock > 0))
     const query = searchQuery.toLowerCase()
     return products.filter(
       (p) =>
         p.is_active &&
-        p.stock > 0 &&
+        (p.inventory_tracked === false || p.stock > 0) &&
         (p.name.toLowerCase().includes(query))
     )
   }, [products, searchQuery])
