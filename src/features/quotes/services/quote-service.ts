@@ -27,7 +27,7 @@ async function getStoreSettings(): Promise<StoreSettings> {
   const { data, error } = await supabase
     .from('settings')
     .select('value')
-    .eq('key', 'store')
+    .eq('key', 'store_settings')
     .single()
 
   if (error || !data) {
