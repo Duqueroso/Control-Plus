@@ -1,3 +1,4 @@
+import { supabase } from '@/lib/supabase'
 import type { StoreSettings } from '@/features/settings/services/settings-service'
 import type { QuoteCustomer } from '../schemas/quote-schema'
 
@@ -20,6 +21,29 @@ export interface QuoteData {
   subtotal: number
   total: number
   store: StoreSettings
+}
+
+async function getStoreSettings(): Promise<StoreSettings> {
+  const { data, error } = await supabase
+    .from('settings')
+    .select('value')
+    .eq('key', 'store')
+    .single()
+
+  if (error || !data) {
+    return {
+      store_name: 'Mi Tienda',
+      store_address: '',
+      store_phone: '',
+      store_email: '',
+      store_logo: '',
+      store_identification: '',
+      currency: 'COP',
+      tax_rate: 0,
+    }
+  }
+
+  return data.value as StoreSettings
 }
 
 function getNextQuoteNumber(): string {
@@ -52,28 +76,19 @@ function formatCurrency(value: number): string {
   }).format(value)
 }
 
-export function generateQuotePDF(items: QuoteItem[], customer: QuoteCustomer): {
+export async function generateQuotePDF(items: QuoteItem[], customer: QuoteCustomer): Promise<{
   quoteNumber: string
   date: string
   validUntil: string
   total: number
   pdfContent: string
-} {
+}> {
   const quoteNumber = getNextQuoteNumber()
   const today = new Date()
   const validUntil = addDays(today, 8)
   const subtotal = items.reduce((acc, item) => acc + item.total, 0)
 
-  const storeSettings = {
-    store_name: 'Mi Tienda',
-    store_address: '',
-    store_phone: '',
-    store_email: '',
-    store_logo: '',
-    store_identification: '',
-    currency: 'COP',
-    tax_rate: 0,
-  }
+  const storeSettings = await getStoreSettings()
 
   const logoHtml = storeSettings.store_logo
     ? `<img src="${storeSettings.store_logo}" alt="Logo" style="max-height: 60px; max-width: 150px; object-fit: contain;" />`

@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import html2pdf from 'html2pdf'
 import { inventoryService } from '@/features/inventory/services/inventory-service'
 import { generateQuotePDF, type QuoteItem } from '../services/quote-service'
 import { quoteCustomerSchema, type QuoteCustomer, type CustomItem } from '../schemas/quote-schema'
@@ -190,16 +191,38 @@ export function QuoteDialog({ open, onOpenChange }: QuoteDialogProps) {
     setIsGenerating(true)
 
     try {
-      const { pdfContent, quoteNumber } = generateQuotePDF(allItems, customer)
+      const { pdfContent, quoteNumber } = await generateQuotePDF(allItems, customer)
 
       const blob = new Blob([pdfContent], { type: 'text/html' })
       const url = URL.createObjectURL(blob)
       const newWindow = window.open(url, '_blank')
 
       if (newWindow) {
-        toast.success(`Cotización ${quoteNumber} generada`)
-        onOpenChange(false)
-        resetForm()
+        newWindow.onload = async () => {
+          try {
+            const pdf = await html2pdf().set({
+              margin: 10,
+              filename: `${quoteNumber}.pdf`,
+              image: { type: 'jpeg', quality: 0.98 },
+              html2canvas: { scale: 2, useCORS: true },
+              jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            }).from(newWindow.document.body).outputPdf()
+
+            const link = newWindow.document.createElement('a')
+            link.href = URL.createObjectURL(pdf)
+            link.download = `${quoteNumber}.pdf`
+            link.click()
+
+            toast.success(`Cotización ${quoteNumber} generada`)
+            onOpenChange(false)
+            resetForm()
+          } catch (error) {
+            console.error('PDF generation error:', error)
+            toast.success(`Cotización ${quoteNumber} generada (abre Ctrl+P para guardar como PDF)`)
+            onOpenChange(false)
+            resetForm()
+          }
+        }
       } else {
         toast.error('Permite ventanas emergentes para descargar el PDF')
       }
