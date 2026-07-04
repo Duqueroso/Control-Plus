@@ -117,7 +117,7 @@ export default function POSPage() {
     const existingItem = cart.find((item) => item.product.id === product.id)
 
     if (existingItem) {
-      if (existingItem.quantity >= product.stock) {
+      if (product.inventory_tracked && existingItem.quantity >= product.stock) {
         toast.warning('No hay más stock disponible')
         return
       }
@@ -140,7 +140,7 @@ export default function POSPage() {
     }
 
     const product = products.find((p) => p.id === productId)
-    if (product && quantity > product.stock) {
+    if (product && product.inventory_tracked && quantity > product.stock) {
       toast.warning('No hay suficiente stock')
       return
     }
