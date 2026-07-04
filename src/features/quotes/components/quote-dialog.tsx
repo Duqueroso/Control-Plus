@@ -193,42 +193,29 @@ export function QuoteDialog({ open, onOpenChange }: QuoteDialogProps) {
     try {
       const { pdfContent, quoteNumber } = await generateQuotePDF(allItems, customer)
 
-      const blob = new Blob([pdfContent], { type: 'text/html' })
-      const url = URL.createObjectURL(blob)
-      const newWindow = window.open(url, '_blank')
+      const container = document.createElement('div')
+      container.innerHTML = pdfContent
+      container.style.position = 'absolute'
+      container.style.left = '-9999px'
+      container.style.top = '0'
+      document.body.appendChild(container)
 
-      if (newWindow) {
-        newWindow.onload = async () => {
-          try {
-            const pdf = await html2pdf().set({
-              margin: 10,
-              filename: `${quoteNumber}.pdf`,
-              image: { type: 'jpeg', quality: 0.98 },
-              html2canvas: { scale: 2, useCORS: true },
-              jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            }).from(newWindow.document.body).outputPdf()
+      await html2pdf().set({
+        margin: 10,
+        filename: `${quoteNumber}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      }).from(container).save()
 
-            const link = newWindow.document.createElement('a')
-            link.href = URL.createObjectURL(pdf)
-            link.download = `${quoteNumber}.pdf`
-            link.click()
+      document.body.removeChild(container)
 
-            toast.success(`Cotización ${quoteNumber} generada`)
-            onOpenChange(false)
-            resetForm()
-          } catch (error) {
-            console.error('PDF generation error:', error)
-            toast.success(`Cotización ${quoteNumber} generada (abre Ctrl+P para guardar como PDF)`)
-            onOpenChange(false)
-            resetForm()
-          }
-        }
-      } else {
-        toast.error('Permite ventanas emergentes para descargar el PDF')
-      }
+      toast.success(`Cotización ${quoteNumber} generada`)
+      onOpenChange(false)
+      resetForm()
     } catch (error) {
+      console.error('PDF generation error:', error)
       toast.error('Error al generar la cotización')
-      console.error(error)
     } finally {
       setIsGenerating(false)
     }
