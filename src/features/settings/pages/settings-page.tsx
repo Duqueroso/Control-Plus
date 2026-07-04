@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Store, Palette, Save, Loader2 } from 'lucide-react'
+import { Store, Palette, Loader2, Check } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { ImageUpload } from '@/components/ui/image-upload'
 import { settingsService, type StoreSettings } from '../services/settings-service'
 import { toast } from 'sonner'
 
@@ -21,6 +21,10 @@ export default function SettingsPage() {
     currency: 'COP',
     tax_rate: 0,
   })
+  const [isSaving, setIsSaving] = useState(false)
+  const [justSaved, setJustSaved] = useState(false)
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const hasLoadedRef = useRef(false)
 
   const { data: loadedSettings } = useQuery({
     queryKey: ['settings', 'store'],
@@ -28,8 +32,9 @@ export default function SettingsPage() {
   })
 
   useEffect(() => {
-    if (loadedSettings) {
+    if (loadedSettings && !hasLoadedRef.current) {
       setStoreSettings(loadedSettings)
+      hasLoadedRef.current = true
     }
   }, [loadedSettings])
 
@@ -37,15 +42,30 @@ export default function SettingsPage() {
     mutationFn: (settings: StoreSettings) => settingsService.saveStoreSettings(settings),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['settings'] })
-      toast.success('Configuración guardada')
+      setIsSaving(false)
+      setJustSaved(true)
+      setTimeout(() => setJustSaved(false), 2000)
     },
     onError: (error: Error) => {
       toast.error(`Error: ${error.message}`)
+      setIsSaving(false)
     },
   })
 
-  const handleSave = () => {
-    saveMutation.mutate(storeSettings)
+  const debouncedSave = useCallback((settings: StoreSettings) => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current)
+    }
+    saveTimeoutRef.current = setTimeout(() => {
+      setIsSaving(true)
+      saveMutation.mutate(settings)
+    }, 1000)
+  }, [saveMutation])
+
+  const updateSetting = <K extends keyof StoreSettings>(key: K, value: StoreSettings[K]) => {
+    const newSettings = { ...storeSettings, [key]: value }
+    setStoreSettings(newSettings)
+    debouncedSave(newSettings)
   }
 
   return (
@@ -84,9 +104,7 @@ export default function SettingsPage() {
                   <Input
                     id="store_name"
                     value={storeSettings.store_name}
-                    onChange={(e) =>
-                      setStoreSettings({ ...storeSettings, store_name: e.target.value })
-                    }
+                    onChange={(e) => updateSetting('store_name', e.target.value)}
                     placeholder="Mi Papelería"
                   />
                 </div>
@@ -95,9 +113,7 @@ export default function SettingsPage() {
                   <Input
                     id="store_phone"
                     value={storeSettings.store_phone}
-                    onChange={(e) =>
-                      setStoreSettings({ ...storeSettings, store_phone: e.target.value })
-                    }
+                    onChange={(e) => updateSetting('store_phone', e.target.value)}
                     placeholder="300 123 4567"
                   />
                 </div>
@@ -107,9 +123,7 @@ export default function SettingsPage() {
                     id="store_email"
                     type="email"
                     value={storeSettings.store_email}
-                    onChange={(e) =>
-                      setStoreSettings({ ...storeSettings, store_email: e.target.value })
-                    }
+                    onChange={(e) => updateSetting('store_email', e.target.value)}
                     placeholder="contacto@tienda.com"
                   />
                 </div>
@@ -118,9 +132,7 @@ export default function SettingsPage() {
                   <Input
                     id="store_identification"
                     value={storeSettings.store_identification}
-                    onChange={(e) =>
-                      setStoreSettings({ ...storeSettings, store_identification: e.target.value })
-                    }
+                    onChange={(e) => updateSetting('store_identification', e.target.value)}
                     placeholder="123456789"
                   />
                 </div>
@@ -129,23 +141,18 @@ export default function SettingsPage() {
                   <Input
                     id="store_address"
                     value={storeSettings.store_address}
-                    onChange={(e) =>
-                      setStoreSettings({ ...storeSettings, store_address: e.target.value })
-                    }
+                    onChange={(e) => updateSetting('store_address', e.target.value)}
                     placeholder="Calle 123 #45-67"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="store_logo">URL del Logo</Label>
-                  <Input
-                    id="store_logo"
-                    value={storeSettings.store_logo}
-                    onChange={(e) =>
-                      setStoreSettings({ ...storeSettings, store_logo: e.target.value })
-                    }
-                    placeholder="https://ejemplo.com/logo.png"
-                  />
-                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Logo de la tienda</Label>
+                <ImageUpload
+                  value={storeSettings.store_logo}
+                  onChange={(url) => updateSetting('store_logo', url || '')}
+                />
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">
@@ -154,9 +161,7 @@ export default function SettingsPage() {
                   <Input
                     id="currency"
                     value={storeSettings.currency}
-                    onChange={(e) =>
-                      setStoreSettings({ ...storeSettings, currency: e.target.value })
-                    }
+                    onChange={(e) => updateSetting('currency', e.target.value)}
                     placeholder="COP"
                   />
                 </div>
@@ -170,30 +175,25 @@ export default function SettingsPage() {
                     max="100"
                     value={storeSettings.tax_rate}
                     onChange={(e) =>
-                      setStoreSettings({
-                        ...storeSettings,
-                        tax_rate: parseFloat(e.target.value) || 0,
-                      })
+                      updateSetting('tax_rate', parseFloat(e.target.value) || 0)
                     }
                     placeholder="0"
                   />
                 </div>
               </div>
 
-              <div className="flex justify-end">
-                <Button onClick={handleSave} disabled={saveMutation.isPending}>
-                  {saveMutation.isPending ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-                      Guardando...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="h-4 w-4 mr-1" />
-                      Guardar Cambios
-                    </>
-                  )}
-                </Button>
+              <div className="flex items-center justify-end">
+                {isSaving ? (
+                  <div className="flex items-center text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Guardando...
+                  </div>
+                ) : justSaved ? (
+                  <div className="flex items-center text-sm text-green-600">
+                    <Check className="h-4 w-4 mr-2" />
+                    Guardado
+                  </div>
+                ) : null}
               </div>
             </CardContent>
           </Card>
