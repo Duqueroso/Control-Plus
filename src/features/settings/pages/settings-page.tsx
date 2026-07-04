@@ -6,17 +6,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { settingsService } from '../services/settings-service'
+import { settingsService, type StoreSettings } from '../services/settings-service'
 import { toast } from 'sonner'
-
-interface StoreSettings {
-  store_name: string
-  store_address: string
-  store_phone: string
-  store_email: string
-  currency: string
-  tax_rate: number
-}
 
 export default function SettingsPage() {
   const queryClient = useQueryClient()
@@ -25,6 +16,8 @@ export default function SettingsPage() {
     store_address: '',
     store_phone: '',
     store_email: '',
+    store_logo: '',
+    store_identification: '',
     currency: 'COP',
     tax_rate: 0,
   })
@@ -121,6 +114,17 @@ export default function SettingsPage() {
                   />
                 </div>
                 <div className="space-y-2">
+                  <Label htmlFor="store_identification">Identificación (NIT/RUT)</Label>
+                  <Input
+                    id="store_identification"
+                    value={storeSettings.store_identification}
+                    onChange={(e) =>
+                      setStoreSettings({ ...storeSettings, store_identification: e.target.value })
+                    }
+                    placeholder="123456789"
+                  />
+                </div>
+                <div className="space-y-2">
                   <Label htmlFor="store_address">Dirección</Label>
                   <Input
                     id="store_address"
@@ -129,6 +133,17 @@ export default function SettingsPage() {
                       setStoreSettings({ ...storeSettings, store_address: e.target.value })
                     }
                     placeholder="Calle 123 #45-67"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="store_logo">URL del Logo</Label>
+                  <Input
+                    id="store_logo"
+                    value={storeSettings.store_logo}
+                    onChange={(e) =>
+                      setStoreSettings({ ...storeSettings, store_logo: e.target.value })
+                    }
+                    placeholder="https://ejemplo.com/logo.png"
                   />
                 </div>
               </div>

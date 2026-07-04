@@ -7,6 +7,7 @@ import DashboardPage from '@/features/dashboard/pages/dashboard-page'
 import InventoryPage from '@/features/inventory/pages/inventory-page'
 import POSPage from '@/features/sales/pages/pos-page'
 import SalesHistoryPage from '@/features/sales/pages/sales-history-page'
+import QuotesPage from '@/features/quotes/pages/quotes-page'
 import CashRegisterPage from '@/features/cash-register/pages/cash-register-page'
 import ExpensesPage from '@/features/expenses/pages/expenses-page'
 import UsersPage from '@/features/users/pages/users-page'
@@ -46,6 +47,10 @@ export const router = createBrowserRouter([
       {
         path: 'sales',
         element: <SalesHistoryPage />,
+      },
+      {
+        path: 'quotes',
+        element: <QuotesPage />,
       },
       {
         path: 'cash-register',

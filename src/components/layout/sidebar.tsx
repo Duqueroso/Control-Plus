@@ -10,6 +10,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Banknote,
+  FileText,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -24,6 +25,7 @@ const menuItems = [
   { path: '/inventory', label: 'Inventario', icon: Package },
   { path: '/pos', label: 'Punto de Venta', icon: ShoppingCart },
   { path: '/sales', label: 'Ventas', icon: DollarSign },
+  { path: '/quotes', label: 'Cotizaciones', icon: FileText },
   { path: '/cash-register', label: 'Caja', icon: Banknote },
   { path: '/expenses', label: 'Gastos', icon: Receipt },
   { path: '/users', label: 'Usuarios', icon: Users },
