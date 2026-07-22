@@ -144,6 +144,12 @@ export const salesService = {
     return data || []
   },
 
+  async getSalesByMonth(month: number, year: number): Promise<Sale[]> {
+    const startDate = new Date(year, month - 1, 1)
+    const endDate = new Date(year, month, 0, 23, 59, 59)
+    return this.getSalesByDateRange(startDate, endDate)
+  },
+
   async cancelSale(saleId: string, items: { product_id: string; quantity: number }[]): Promise<void> {
     for (const item of items) {
       const { data: product } = await supabase
