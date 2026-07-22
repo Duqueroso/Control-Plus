@@ -1,13 +1,15 @@
 import { useQuery } from '@tanstack/react-query'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { DollarSign, TrendingUp, Package, AlertTriangle, FileSpreadsheet, Receipt, RefreshCw } from 'lucide-react'
+import { DollarSign, TrendingUp, Package, AlertTriangle, FileSpreadsheet, Receipt, RefreshCw, Calendar } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { inventoryService } from '@/features/inventory/services/inventory-service'
 import { salesService } from '@/features/sales/services/sales-service'
 import { cashRegisterService } from '@/features/cash-register/services/cash-register-service'
 import { ReportDialog } from '@/features/reports/components/report-dialog'
 import { reinvestmentService } from '@/features/reinvestments/services/reinvestment-service'
+import { monthlyClosureService } from '@/features/monthly-closures/services/monthly-closure-service'
 import { supabase } from '@/lib/supabase'
 import { useState } from 'react'
 
@@ -68,6 +70,14 @@ function formatCurrency(value: number): string {
   }).format(value)
 }
 
+function getMonthName(month: number): string {
+  const months = [
+    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+  ]
+  return months[month - 1]
+}
+
 export default function DashboardPage() {
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false)
 
@@ -107,6 +117,11 @@ export default function DashboardPage() {
   const { data: availableBalance = 0 } = useQuery({
     queryKey: ['available-balance'],
     queryFn: reinvestmentService.getAvailableBalance,
+  })
+
+  const { data: closures = [] } = useQuery({
+    queryKey: ['monthly-closures'],
+    queryFn: monthlyClosureService.getClosures,
   })
 
   const today = new Date()
@@ -278,6 +293,76 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="h-5 w-5" />
+            Resumen de Meses
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-3 rounded-lg border bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-900">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center">
+                  <span className="text-sm font-bold text-green-700 dark:text-green-400">
+                    {today.toLocaleDateString('es-CO', { month: 'short' }).charAt(0).toUpperCase()}
+                  </span>
+                </div>
+                <div>
+                  <p className="font-medium">
+                    {today.toLocaleDateString('es-CO', { month: 'long', year: 'numeric' }).charAt(0).toUpperCase() + 
+                     today.toLocaleDateString('es-CO', { month: 'long', year: 'numeric' }).slice(1)}
+                  </p>
+                  <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-400 mt-1">
+                    Mes actual - Abierto
+                  </Badge>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-lg font-bold text-green-600">{formatCurrency(monthTotal)}</p>
+                <p className="text-xs text-muted-foreground">{monthSales.length} ventas</p>
+              </div>
+            </div>
+
+            {closures.slice(0, 6).map((closure) => (
+              <div
+                key={closure.id}
+                className="flex items-center justify-between p-3 rounded-lg border bg-muted/50"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                    <span className="text-sm font-bold text-muted-foreground">
+                      {getMonthName(closure.month).charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="font-medium">
+                      {getMonthName(closure.month)} {closure.year}
+                    </p>
+                    <Badge variant="outline" className="mt-1">
+                      Cerrado
+                    </Badge>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-lg font-bold">{formatCurrency(Number(closure.total_sales))}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Balance: {formatCurrency(Number(closure.closing_balance))}
+                  </p>
+                </div>
+              </div>
+            ))}
+
+            {closures.length === 0 && (
+              <p className="text-center text-muted-foreground py-4">
+                No hay meses cerrados aún
+              </p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       <ReportDialog
         open={isReportDialogOpen}
