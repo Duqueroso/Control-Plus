@@ -1,16 +1,13 @@
 import * as XLSX from 'xlsx'
 import { inventoryService } from '@/features/inventory/services/inventory-service'
 import { salesService } from '@/features/sales/services/sales-service'
-import { cashRegisterService } from '@/features/cash-register/services/cash-register-service'
 import { supabase } from '@/lib/supabase'
-import type { CashMovement } from '@/types'
 
 interface ReportOptions {
   startDate?: string
   endDate?: string
   includeSales: boolean
   includeExpenses: boolean
-  includeCashMovements: boolean
   includeInventory: boolean
 }
 
@@ -34,7 +31,6 @@ export const reportService = {
       endDate,
       includeSales,
       includeExpenses,
-      includeCashMovements,
       includeInventory,
     } = options
 
@@ -83,27 +79,6 @@ export const reportService = {
       const totalExpenses = filteredExpenses.reduce((acc, e) => acc + Number(e.amount), 0)
       summaryData.push(['Total Gastos:', formatCurrency(totalExpenses)])
       summaryData.push(['Número de Gastos:', filteredExpenses.length])
-    }
-
-    if (includeCashMovements) {
-      const cashRegisters = await cashRegisterService.getAllCashRegisters()
-      let totalIncome = 0
-      let totalExpense = 0
-
-      for (const cr of cashRegisters) {
-        if (cr.status === 'open') continue
-        const movements = await cashRegisterService.getCashMovements(cr.id)
-        const filteredMovs = movements.filter((m) => {
-          if (!startDate || !endDate) return true
-          const movDate = new Date(m.created_at)
-          return movDate >= new Date(startDate) && movDate <= new Date(endDate)
-        })
-        totalIncome += filteredMovs.filter((m) => m.type === 'income').reduce((acc, m) => acc + Number(m.amount), 0)
-        totalExpense += filteredMovs.filter((m) => m.type === 'expense').reduce((acc, m) => acc + Number(m.amount), 0)
-      }
-      summaryData.push(['Total Ingresos de Caja:', formatCurrency(totalIncome)])
-      summaryData.push(['Total Egresos de Caja:', formatCurrency(totalExpense)])
-      summaryData.push(['Balance de Caja:', formatCurrency(totalIncome - totalExpense)])
     }
 
     if (includeInventory) {
@@ -178,46 +153,6 @@ export const reportService = {
       const expensesWs = XLSX.utils.aoa_to_sheet(expensesData)
       expensesWs['!cols'] = [{ wch: 12 }, { wch: 15 }, { wch: 35 }, { wch: 18 }]
       XLSX.utils.book_append_sheet(workbook, expensesWs, 'Gastos')
-    }
-
-    // =====================
-    // MOVIMIENTOS DE CAJA
-    // =====================
-    if (includeCashMovements) {
-      const cashRegisters = await cashRegisterService.getAllCashRegisters()
-      const allMovements: (CashMovement & { registerId: string; registerOpenedAt: string })[] = []
-
-      for (const cr of cashRegisters) {
-        const movements = await cashRegisterService.getCashMovements(cr.id)
-        const filtered = movements.filter((m) => {
-          if (!startDate || !endDate) return true
-          const movDate = new Date(m.created_at)
-          return movDate >= new Date(startDate) && movDate <= new Date(endDate)
-        })
-        allMovements.push(...filtered.map((m) => ({ ...m, registerId: cr.id, registerOpenedAt: cr.opened_at })))
-      }
-
-      allMovements.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-
-      const movHeaders = [['Fecha', 'Hora', 'Tipo', 'Descripción', 'Monto']]
-      const movRows = allMovements.map((m) => [
-        formatDate(m.created_at),
-        new Date(m.created_at).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' }),
-        m.type === 'income' ? 'Ingreso' : 'Egreso',
-        m.description || '-',
-        `${m.type === 'income' ? '+' : '-'}${formatCurrency(Number(m.amount))}`,
-      ])
-
-      const totalIncome = allMovements.filter((m) => m.type === 'income').reduce((acc, m) => acc + Number(m.amount), 0)
-      const totalExpense = allMovements.filter((m) => m.type === 'expense').reduce((acc, m) => acc + Number(m.amount), 0)
-      movRows.push(['', '', '', 'TOTAL INGRESOS:', `+${formatCurrency(totalIncome)}`])
-      movRows.push(['', '', '', 'TOTAL EGRESOS:', `-${formatCurrency(totalExpense)}`])
-      movRows.push(['', '', '', 'BALANCE:', formatCurrency(totalIncome - totalExpense)])
-
-      const movData = [...movHeaders, ...movRows]
-      const movWs = XLSX.utils.aoa_to_sheet(movData)
-      movWs['!cols'] = [{ wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 30 }, { wch: 18 }]
-      XLSX.utils.book_append_sheet(workbook, movWs, 'Movimientos Caja')
     }
 
     // =====================

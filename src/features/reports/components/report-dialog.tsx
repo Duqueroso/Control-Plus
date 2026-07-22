@@ -44,11 +44,10 @@ export function ReportDialog({ open, onOpenChange }: ReportDialogProps) {
   const [endDate, setEndDate] = useState('')
   const [includeSales, setIncludeSales] = useState(true)
   const [includeExpenses, setIncludeExpenses] = useState(true)
-  const [includeCashMovements, setIncludeCashMovements] = useState(true)
   const [includeInventory, setIncludeInventory] = useState(true)
 
   const handleGenerate = async () => {
-    if (!includeSales && !includeExpenses && !includeCashMovements && !includeInventory) {
+    if (!includeSales && !includeExpenses && !includeInventory) {
       toast.error('Selecciona al menos una sección para incluir')
       return
     }
@@ -61,7 +60,6 @@ export function ReportDialog({ open, onOpenChange }: ReportDialogProps) {
         endDate: endDate || undefined,
         includeSales,
         includeExpenses,
-        includeCashMovements,
         includeInventory,
       })
       toast.success('Reporte generado exitosamente')
@@ -79,7 +77,6 @@ export function ReportDialog({ open, onOpenChange }: ReportDialogProps) {
     setEndDate('')
     setIncludeSales(true)
     setIncludeExpenses(true)
-    setIncludeCashMovements(true)
     setIncludeInventory(true)
     onOpenChange(false)
   }
@@ -144,16 +141,6 @@ export function ReportDialog({ open, onOpenChange }: ReportDialogProps) {
                 />
                 <label htmlFor="expenses" className="text-sm cursor-pointer">
                   Gastos
-                </label>
-              </div>
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  id="cashMovements"
-                  checked={includeCashMovements}
-                  onCheckedChange={(checked) => setIncludeCashMovements(checked as boolean)}
-                />
-                <label htmlFor="cashMovements" className="text-sm cursor-pointer">
-                  Movimientos de Caja
                 </label>
               </div>
               <div className="flex items-center gap-2">

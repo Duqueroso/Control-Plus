@@ -1,19 +1,6 @@
 import { supabase } from '@/lib/supabase'
 import type { Sale } from '@/types'
 
-async function getCurrentCashRegister() {
-  const { data, error } = await supabase
-    .from('cash_registers')
-    .select('*')
-    .eq('status', 'open')
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .single()
-
-  if (error && error.code !== 'PGRST116') throw error
-  return data || null
-}
-
 export const salesService = {
   async getSales(): Promise<Sale[]> {
     const { data, error } = await supabase
@@ -99,17 +86,6 @@ export const salesService = {
       }
     }
 
-    const cashRegister = await getCurrentCashRegister()
-    if (cashRegister) {
-      await supabase.from('cash_movements').insert({
-        cash_register_id: cashRegister.id,
-        sale_id: saleData.id,
-        type: 'income',
-        amount: sale.total,
-        description: 'Venta',
-      })
-    }
-
     return {
       ...saleData,
       items: saleItems as any,
@@ -166,11 +142,6 @@ export const salesService = {
         if (rpcError) throw new Error(`Error revertiendo stock: ${rpcError.message}`)
       }
     }
-
-    await supabase
-      .from('cash_movements')
-      .delete()
-      .eq('sale_id', saleId)
 
     const { error } = await supabase
       .from('sales')

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Plus, Search, Pencil, Trash2, Calendar, Lock } from 'lucide-react'
+import { Plus, Search, Pencil, Trash2, Calendar } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -23,7 +23,6 @@ import {
 } from '@/components/ui/table'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/features/auth/store/auth-store'
-import { cashRegisterService } from '@/features/cash-register/services/cash-register-service'
 import { toast } from 'sonner'
 import type { Expense } from '@/types'
 
@@ -91,20 +90,12 @@ export default function ExpensesPage() {
     },
   })
 
-  const { data: currentCashRegister } = useQuery({
-    queryKey: ['cash-register'],
-    queryFn: cashRegisterService.getCurrentCashRegister,
-  })
-
-  const isCashRegisterOpen = !!currentCashRegister
-
   const createMutation = useMutation({
     mutationFn: async (expense: Omit<Expense, 'id' | 'created_at' | 'updated_at'>) => {
       const { error } = await supabase.from('expenses').insert(expense)
       if (error) throw error
     },
     onSuccess: () => {
-      handleCreateSuccess()
       queryClient.invalidateQueries({ queryKey: ['expenses'] })
       toast.success('Gasto creado exitosamente')
       closeCreateDialog()
@@ -171,10 +162,6 @@ export default function ExpensesPage() {
   const monthlyTotal = monthlyExpenses.reduce((acc, e) => acc + Number(e.amount), 0)
 
   const openCreateDialog = () => {
-    if (!isCashRegisterOpen) {
-      toast.error('Abre la caja para registrar un gasto')
-      return
-    }
     setForm({
       category: '',
       amount: '',
@@ -225,10 +212,6 @@ export default function ExpensesPage() {
       toast.error('Completa los campos obligatorios')
       return
     }
-    if (!currentCashRegister) {
-      toast.error('Abre la caja para registrar un gasto')
-      return
-    }
 
     createMutation.mutate({
       user_id: user.id,
@@ -237,18 +220,6 @@ export default function ExpensesPage() {
       description: form.description,
       expense_date: form.expense_date,
     })
-  }
-
-  const handleCreateSuccess = async () => {
-    if (currentCashRegister && parseFloat(form.amount) > 0) {
-      await supabase.from('cash_movements').insert({
-        cash_register_id: currentCashRegister.id,
-        type: 'expense',
-        amount: parseFloat(form.amount),
-        description: `Gasto: ${form.category}`,
-      })
-      queryClient.invalidateQueries({ queryKey: ['cash-register-movements'] })
-    }
   }
 
   const handleUpdate = () => {
@@ -281,13 +252,7 @@ export default function ExpensesPage() {
             Registro y gestión de gastos del negocio
           </p>
         </div>
-        {!isCashRegisterOpen && (
-          <Badge variant="destructive" className="text-sm">
-            <Lock className="h-3 w-3 mr-1" />
-            Caja cerrada
-          </Badge>
-        )}
-        <Button onClick={openCreateDialog} disabled={!isCashRegisterOpen}>
+        <Button onClick={openCreateDialog}>
           <Plus className="h-4 w-4 mr-1" />
           Nuevo Gasto
         </Button>

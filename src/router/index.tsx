@@ -8,7 +8,6 @@ import InventoryPage from '@/features/inventory/pages/inventory-page'
 import POSPage from '@/features/sales/pages/pos-page'
 import SalesHistoryPage from '@/features/sales/pages/sales-history-page'
 import QuotesPage from '@/features/quotes/pages/quotes-page'
-import CashRegisterPage from '@/features/cash-register/pages/cash-register-page'
 import ExpensesPage from '@/features/expenses/pages/expenses-page'
 import ReinvestmentsPage from '@/features/reinvestments/pages/reinvestments-page'
 import MonthlyClosuresPage from '@/features/monthly-closures/pages/monthly-closures-page'
@@ -54,10 +53,6 @@ export const router = createBrowserRouter([
       {
         path: 'quotes',
         element: <QuotesPage />,
-      },
-      {
-        path: 'cash-register',
-        element: <CashRegisterPage />,
       },
       {
         path: 'expenses',

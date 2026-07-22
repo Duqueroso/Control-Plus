@@ -7,7 +7,6 @@ import {
   Receipt,
   Users,
   Settings,
-  Banknote,
 } from 'lucide-react'
 import {
   Sheet,
@@ -22,7 +21,6 @@ const menuItems = [
   { path: '/inventory', label: 'Inventario', icon: Package },
   { path: '/pos', label: 'Punto de Venta', icon: ShoppingCart },
   { path: '/sales', label: 'Ventas', icon: DollarSign },
-  { path: '/cash-register', label: 'Caja', icon: Banknote },
   { path: '/expenses', label: 'Gastos', icon: Receipt },
   { path: '/users', label: 'Usuarios', icon: Users },
   { path: '/settings', label: 'Configuración', icon: Settings },

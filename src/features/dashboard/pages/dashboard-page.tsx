@@ -1,17 +1,16 @@
 import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { DollarSign, TrendingUp, Package, AlertTriangle, FileSpreadsheet, Receipt, RefreshCw, Calendar } from 'lucide-react'
+import { DollarSign, TrendingUp, AlertTriangle, FileSpreadsheet, Receipt, RefreshCw, Calendar } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { inventoryService } from '@/features/inventory/services/inventory-service'
 import { salesService } from '@/features/sales/services/sales-service'
-import { cashRegisterService } from '@/features/cash-register/services/cash-register-service'
 import { ReportDialog } from '@/features/reports/components/report-dialog'
 import { reinvestmentService } from '@/features/reinvestments/services/reinvestment-service'
 import { monthlyClosureService } from '@/features/monthly-closures/services/monthly-closure-service'
 import { supabase } from '@/lib/supabase'
-import { useState } from 'react'
 
 interface StatCardProps {
   title: string
@@ -91,17 +90,6 @@ export default function DashboardPage() {
     queryFn: salesService.getSales,
   })
 
-  const { data: cashRegister } = useQuery({
-    queryKey: ['cash-register'],
-    queryFn: cashRegisterService.getCurrentCashRegister,
-  })
-
-  const { data: movements = [] } = useQuery({
-    queryKey: ['cash-register-movements', cashRegister?.id],
-    queryFn: () => cashRegisterService.getCashMovements(cashRegister!.id),
-    enabled: !!cashRegister,
-  })
-
   const { data: expenses = [], isLoading: isLoadingExpenses } = useQuery({
     queryKey: ['expenses'],
     queryFn: async () => {
@@ -161,18 +149,6 @@ export default function DashboardPage() {
 
   const lowStockProducts = products.filter((p) => p.stock <= p.min_stock)
 
-  const totalCashIncome = movements
-    .filter((m) => m.type === 'income')
-    .reduce((acc, m) => acc + Number(m.amount), 0)
-
-  const totalCashExpenses = movements
-    .filter((m) => m.type === 'expense')
-    .reduce((acc, m) => acc + Number(m.amount), 0)
-
-  const currentCashBalance = cashRegister
-    ? Number(cashRegister.initial_amount) + totalCashIncome - totalCashExpenses
-    : 0
-
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
@@ -214,13 +190,6 @@ export default function DashboardPage() {
           trendUp
           isLoading={isLoadingSales}
           accentColor="#7BBDE8"
-        />
-        <StatCard
-          title="Caja actual"
-          value={cashRegister ? formatCurrency(currentCashBalance) : 'Caja cerrada'}
-          icon={Package}
-          isLoading={false}
-          accentColor="#4E84A2"
         />
       </div>
 

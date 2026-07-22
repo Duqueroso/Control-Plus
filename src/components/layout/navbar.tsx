@@ -21,7 +21,6 @@ const routeNames: Record<string, string> = {
   '/inventory': 'Inventario',
   '/pos': 'Punto de Venta',
   '/sales': 'Ventas',
-  '/cash-register': 'Caja',
   '/expenses': 'Gastos',
   '/users': 'Usuarios',
   '/settings': 'Configuración',

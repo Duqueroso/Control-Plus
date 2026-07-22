@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Search, ShoppingCart, CreditCard, Banknote, QrCode, Plus, Minus, X, Lock } from 'lucide-react'
+import { Search, ShoppingCart, CreditCard, Banknote, QrCode, Plus, Minus, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
@@ -24,7 +24,6 @@ import {
 } from '@/components/ui/select'
 import { inventoryService } from '@/features/inventory/services/inventory-service'
 import { salesService } from '@/features/sales/services/sales-service'
-import { cashRegisterService } from '@/features/cash-register/services/cash-register-service'
 import { useAuthStore } from '@/features/auth/store/auth-store'
 import type { Product } from '@/types'
 import { toast } from 'sonner'
@@ -65,20 +64,12 @@ export default function POSPage() {
     queryFn: inventoryService.getAllProducts,
   })
 
-  const { data: currentCashRegister } = useQuery({
-    queryKey: ['cash-register'],
-    queryFn: cashRegisterService.getCurrentCashRegister,
-  })
-
-  const isCashRegisterOpen = !!currentCashRegister
-
   const createSaleMutation = useMutation({
     mutationFn: salesService.createSale,
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['products-all'] })
       await queryClient.refetchQueries({ queryKey: ['products-all'] })
       queryClient.invalidateQueries({ queryKey: ['sales'] })
-      queryClient.invalidateQueries({ queryKey: ['cash-register-movements'] })
       queryClient.invalidateQueries({ queryKey: ['available-balance'] })
       queryClient.invalidateQueries({ queryKey: ['reinvestments'] })
       queryClient.invalidateQueries({ queryKey: ['reinvestments-total'] })
@@ -214,23 +205,7 @@ export default function POSPage() {
       </div>
 
       <ScrollArea className="h-[calc(100vh-12rem)]">
-        {!isCashRegisterOpen ? (
-          <div className="flex flex-col items-center justify-center h-96">
-            <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-4">
-              <Lock className="h-10 w-10 text-muted-foreground" />
-            </div>
-            <h3 className="text-lg font-medium mb-2">Caja cerrada</h3>
-            <p className="text-muted-foreground text-center mb-4 max-w-md">
-              La caja se encuentra cerrada. Abre la caja para comenzar a registrar ventas.
-            </p>
-            <Button
-              style={{ backgroundColor: '#0A4174' }}
-              onClick={() => window.location.href = '/cash-register'}
-            >
-              Abrir Caja
-            </Button>
-          </div>
-        ) : isLoadingProducts ? (
+        {isLoadingProducts ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
             {[...Array(12)].map((_, i) => (
               <Card key={i} className="h-56 animate-pulse" />
@@ -248,7 +223,7 @@ export default function POSPage() {
             {filteredProducts.map((product) => (
               <Card
                 key={product.id}
-                className={`cursor-pointer hover:shadow-lg hover:border-primary/50 transition-all duration-200 overflow-hidden ${!isCashRegisterOpen ? 'opacity-50 pointer-events-none' : ''}`}
+                className="cursor-pointer hover:shadow-lg hover:border-primary/50 transition-all duration-200 overflow-hidden"
                 onClick={() => addToCart(product)}
               >
                 <div className="h-32 sm:h-40 w-full bg-muted/30 relative overflow-hidden">
@@ -442,7 +417,6 @@ export default function POSPage() {
                     className="flex-1 h-11"
                     style={{ backgroundColor: '#0A4174' }}
                     onClick={() => setIsCheckoutOpen(true)}
-                    disabled={!isCashRegisterOpen}
                   >
                     Cobrar
                   </Button>
