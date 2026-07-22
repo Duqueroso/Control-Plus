@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { useSearchParams, Link } from 'react-router-dom'
-import { ArrowLeft, DollarSign, TrendingUp, TrendingDown, RefreshCw, Receipt, Calendar } from 'lucide-react'
+import { ArrowLeft, DollarSign, RefreshCw, Receipt } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -15,7 +15,6 @@ import {
 import { monthlyClosureService } from '@/features/monthly-closures/services/monthly-closure-service'
 import { reinvestmentService } from '@/features/reinvestments/services/reinvestment-service'
 import { supabase } from '@/lib/supabase'
-import { useAuthStore } from '@/features/auth/store/auth-store'
 
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat('es-CO', {
@@ -52,7 +51,7 @@ export default function ReportsPage() {
   const month = monthParam ? parseInt(monthParam) : now.getMonth() + 1
   const year = yearParam ? parseInt(yearParam) : now.getFullYear()
 
-  const { data: closure } = useQuery({
+  const { data: _closure } = useQuery({
     queryKey: ['monthly-closure', month, year],
     queryFn: () => monthlyClosureService.getClosureByMonthYear(month, year),
   })

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { FileText, Calendar, TrendingUp, TrendingDown, DollarSign } from 'lucide-react'
+import { FileText, Calendar, TrendingUp } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -27,16 +27,6 @@ function getMonthName(month: number): string {
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
   ]
   return months[month - 1]
-}
-
-function formatPaymentMethod(method: string): string {
-  const labels: Record<string, string> = {
-    cash: 'Efectivo',
-    transfer: 'Transferencia',
-    qr: 'QR',
-    card: 'Tarjeta',
-  }
-  return labels[method] || method
 }
 
 export default function MonthlyClosuresPage() {

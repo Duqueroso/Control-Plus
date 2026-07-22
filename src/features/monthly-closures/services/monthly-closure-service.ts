@@ -26,7 +26,7 @@ export const monthlyClosureService = {
   },
 
   async createClosure(month: number, year: number): Promise<MonthlyClosure> {
-    const { data, error } = await supabase.rpc('create_monthly_closure', {
+    const { error } = await supabase.rpc('create_monthly_closure', {
       p_month: month,
       p_year: year,
     })
