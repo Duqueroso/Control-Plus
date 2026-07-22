@@ -10,6 +10,9 @@ import SalesHistoryPage from '@/features/sales/pages/sales-history-page'
 import QuotesPage from '@/features/quotes/pages/quotes-page'
 import CashRegisterPage from '@/features/cash-register/pages/cash-register-page'
 import ExpensesPage from '@/features/expenses/pages/expenses-page'
+import ReinvestmentsPage from '@/features/reinvestments/pages/reinvestments-page'
+import MonthlyClosuresPage from '@/features/monthly-closures/pages/monthly-closures-page'
+import ReportsPage from '@/features/reports/pages/reports-page'
 import UsersPage from '@/features/users/pages/users-page'
 import SettingsPage from '@/features/settings/pages/settings-page'
 
@@ -59,6 +62,18 @@ export const router = createBrowserRouter([
       {
         path: 'expenses',
         element: <ExpensesPage />,
+      },
+      {
+        path: 'reinvestments',
+        element: <ReinvestmentsPage />,
+      },
+      {
+        path: 'closures',
+        element: <MonthlyClosuresPage />,
+      },
+      {
+        path: 'reports',
+        element: <ReportsPage />,
       },
       {
         path: 'users',

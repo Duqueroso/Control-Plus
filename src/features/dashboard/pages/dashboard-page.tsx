@@ -1,12 +1,13 @@
 import { useQuery } from '@tanstack/react-query'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { DollarSign, TrendingUp, Package, AlertTriangle, FileSpreadsheet, Receipt } from 'lucide-react'
+import { DollarSign, TrendingUp, Package, AlertTriangle, FileSpreadsheet, Receipt, RefreshCw } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Button } from '@/components/ui/button'
 import { inventoryService } from '@/features/inventory/services/inventory-service'
 import { salesService } from '@/features/sales/services/sales-service'
 import { cashRegisterService } from '@/features/cash-register/services/cash-register-service'
 import { ReportDialog } from '@/features/reports/components/report-dialog'
+import { reinvestmentService } from '@/features/reinvestments/services/reinvestment-service'
 import { supabase } from '@/lib/supabase'
 import { useState } from 'react'
 
@@ -101,6 +102,11 @@ export default function DashboardPage() {
       if (error) throw error
       return data || []
     },
+  })
+
+  const { data: availableBalance = 0 } = useQuery({
+    queryKey: ['available-balance'],
+    queryFn: reinvestmentService.getAvailableBalance,
   })
 
   const today = new Date()
@@ -211,6 +217,14 @@ export default function DashboardPage() {
           trend={`${sales.filter((s) => s.status === 'completed').length} ventas`}
           isLoading={isLoadingSales}
           accentColor="#0D7C3E"
+        />
+        <StatCard
+          title="Saldo disponible"
+          value={formatCurrency(availableBalance)}
+          icon={RefreshCw}
+          trend="Después de reinversiones"
+          isLoading={isLoadingSales}
+          accentColor="#059669"
         />
         <StatCard
           title="Gastos totales"

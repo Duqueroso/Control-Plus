@@ -81,6 +81,22 @@ export interface Expense extends BaseEntity {
   expense_date: string
 }
 
+export interface Reinvestment extends BaseEntity {
+  user_id: string
+  amount: number
+  description: string
+}
+
+export interface MonthlyClosure extends BaseEntity {
+  month: number
+  year: number
+  total_sales: number
+  sales_by_payment_method: Record<string, number>
+  expenses_total: number
+  reinvestments_total: number
+  closing_balance: number
+}
+
 export interface ProductImport {
   nombre: string
   precio_compra: number

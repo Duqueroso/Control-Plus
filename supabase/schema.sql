@@ -148,6 +148,35 @@ CREATE TABLE public.settings (
 );
 
 -- ============================================
+-- REINVESTMENTS
+-- ============================================
+
+CREATE TABLE public.reinvestments (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES public.profiles(id),
+    amount NUMERIC(12, 2) NOT NULL,
+    description TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- ============================================
+-- MONTHLY CLOSURES
+-- ============================================
+
+CREATE TABLE public.monthly_closures (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    month INTEGER NOT NULL CHECK (month >= 1 AND month <= 12),
+    year INTEGER NOT NULL,
+    total_sales NUMERIC(12, 2) NOT NULL DEFAULT 0,
+    sales_by_payment_method JSONB NOT NULL DEFAULT '{}',
+    expenses_total NUMERIC(12, 2) NOT NULL DEFAULT 0,
+    reinvestments_total NUMERIC(12, 2) NOT NULL DEFAULT 0,
+    closing_balance NUMERIC(12, 2) NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE(month, year)
+);
+
+-- ============================================
 -- INDEXES
 -- ============================================
 
@@ -160,6 +189,9 @@ CREATE INDEX idx_sale_items_sale ON public.sale_items(sale_id);
 CREATE INDEX idx_cash_movements_register ON public.cash_movements(cash_register_id);
 CREATE INDEX idx_expenses_user ON public.expenses(user_id);
 CREATE INDEX idx_expenses_date ON public.expenses(expense_date);
+CREATE INDEX idx_reinvestments_user ON public.reinvestments(user_id);
+CREATE INDEX idx_reinvestments_date ON public.reinvestments(created_at);
+CREATE INDEX idx_monthly_closures_period ON public.monthly_closures(year, month);
 
 -- ============================================
 -- TRIGGERS FOR UPDATED_AT
@@ -210,6 +242,8 @@ ALTER TABLE public.cash_registers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.cash_movements ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.expenses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.reinvestments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.monthly_closures ENABLE ROW LEVEL SECURITY;
 
 -- Profiles: users can read all, admins can update
 CREATE POLICY "Profiles are viewable by authenticated users"
@@ -364,6 +398,42 @@ CREATE POLICY "Admins can manage settings"
         )
     );
 
+-- Reinvestments: all authenticated can read, employees can create
+CREATE POLICY "Reinvestments are viewable by authenticated users"
+    ON public.reinvestments FOR SELECT
+    TO authenticated
+    USING (true);
+
+CREATE POLICY "Employees can manage own reinvestments"
+    ON public.reinvestments FOR ALL
+    TO authenticated
+    USING (
+        user_id = auth.uid() OR EXISTS (
+            SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'
+        )
+    )
+    WITH CHECK (
+        user_id = auth.uid() OR EXISTS (
+            SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'
+        )
+    );
+
+-- Monthly closures: all authenticated can read, admins can create
+CREATE POLICY "Monthly closures are viewable by authenticated users"
+    ON public.monthly_closures FOR SELECT
+    TO authenticated
+    USING (true);
+
+CREATE POLICY "Admins can manage monthly closures"
+    ON public.monthly_closures FOR ALL
+    TO authenticated
+    USING (
+        EXISTS (
+            SELECT 1 FROM public.profiles
+            WHERE id = auth.uid() AND role = 'admin'
+        )
+    );
+
 -- ============================================
 -- SEED DATA
 -- ============================================
@@ -422,5 +492,82 @@ RETURNS void AS $$
 BEGIN
   DELETE FROM sale_items WHERE product_id = p_id;
   DELETE FROM products WHERE id = p_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE FUNCTION calculate_available_balance()
+RETURNS NUMERIC(12, 2) AS $$
+DECLARE
+  total_sales NUMERIC(12, 2);
+  total_reinvestments NUMERIC(12, 2);
+BEGIN
+  SELECT COALESCE(SUM(total), 0) INTO total_sales
+  FROM sales
+  WHERE status = 'completed';
+
+  SELECT COALESCE(SUM(amount), 0) INTO total_reinvestments
+  FROM reinvestments;
+
+  RETURN total_sales - total_reinvestments;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE FUNCTION create_monthly_closure(
+  p_month INTEGER,
+  p_year INTEGER
+)
+RETURNS void AS $$
+DECLARE
+  month_start DATE;
+  month_end DATE;
+  total_sales NUMERIC(12, 2);
+  expenses_total NUMERIC(12, 2);
+  reinvestments_total NUMERIC(12, 2);
+  closing_balance NUMERIC(12, 2);
+  sales_by_method JSONB;
+BEGIN
+  month_start := make_date(p_year, p_month, 1);
+  month_end := make_date(p_year, p_month, 1) + INTERVAL '1 month' - INTERVAL '1 day';
+
+  SELECT COALESCE(SUM(total), 0) INTO total_sales
+  FROM sales
+  WHERE status = 'completed'
+    AND created_at >= month_start
+    AND created_at < month_start + INTERVAL '1 month';
+
+  SELECT jsonb_object_agg(payment_method, sum_total)
+  INTO sales_by_method
+  FROM (
+    SELECT payment_method, SUM(total) as sum_total
+    FROM sales
+    WHERE status = 'completed'
+      AND created_at >= month_start
+      AND created_at < month_start + INTERVAL '1 month'
+    GROUP BY payment_method
+  ) sub;
+
+  SELECT COALESCE(SUM(amount), 0) INTO expenses_total
+  FROM expenses
+  WHERE expense_date >= month_start AND expense_date <= month_end;
+
+  SELECT COALESCE(SUM(amount), 0) INTO reinvestments_total
+  FROM reinvestments
+  WHERE created_at >= month_start AND created_at < month_start + INTERVAL '1 month';
+
+  closing_balance := total_sales - expenses_total - reinvestments_total;
+
+  INSERT INTO monthly_closures (
+    month, year, total_sales, sales_by_payment_method,
+    expenses_total, reinvestments_total, closing_balance
+  )
+  VALUES (p_month, p_year, total_sales, COALESCE(sales_by_method, '{}'::jsonb),
+          expenses_total, reinvestments_total, closing_balance)
+  ON CONFLICT (month, year) DO UPDATE
+    SET total_sales = EXCLUDED.total_sales,
+        sales_by_payment_method = EXCLUDED.sales_by_payment_method,
+        expenses_total = EXCLUDED.expenses_total,
+        reinvestments_total = EXCLUDED.reinvestments_total,
+        closing_balance = EXCLUDED.closing_balance,
+        created_at = NOW();
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

@@ -11,6 +11,8 @@ import {
   ChevronRight,
   Banknote,
   FileText,
+  RefreshCw,
+  Calendar,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -28,6 +30,8 @@ const menuItems = [
   { path: '/quotes', label: 'Cotizaciones', icon: FileText },
   { path: '/cash-register', label: 'Caja', icon: Banknote },
   { path: '/expenses', label: 'Gastos', icon: Receipt },
+  { path: '/reinvestments', label: 'Reinversiones', icon: RefreshCw },
+  { path: '/closures', label: 'Historial', icon: Calendar },
   { path: '/users', label: 'Usuarios', icon: Users },
   { path: '/settings', label: 'Configuración', icon: Settings },
 ]
