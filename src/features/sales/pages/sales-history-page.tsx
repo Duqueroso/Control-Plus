@@ -104,6 +104,12 @@ export default function SalesHistoryPage() {
       }
 
       toast.success('Venta cancelada y stock revertido')
+      queryClient.invalidateQueries({ queryKey: ['available-balance'] })
+      queryClient.invalidateQueries({ queryKey: ['reinvestments'] })
+      queryClient.invalidateQueries({ queryKey: ['reinvestments-total'] })
+      queryClient.invalidateQueries({ queryKey: ['sales-months'] })
+      queryClient.invalidateQueries({ queryKey: ['expenses-months'] })
+      queryClient.invalidateQueries({ queryKey: ['monthly-closures'] })
       setShowCancelDialog(false)
       setIsCancelling(false)
     },
