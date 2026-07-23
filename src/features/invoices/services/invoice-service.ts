@@ -158,6 +158,9 @@ export async function generateInvoicePDF(
           background: #FFFFFF;
           line-height: 1.5;
           padding: 45px;
+          min-height: 100vh;
+          display: flex;
+          flex-direction: column;
         }
         .header {
           display: flex;
@@ -259,6 +262,7 @@ export async function generateInvoicePDF(
           display: grid;
           grid-template-columns: 1fr 320px;
           gap: 80px;
+          margin-top: auto;
         }
         .notes h4 {
           font-size: 13px;
