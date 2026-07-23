@@ -104,20 +104,10 @@ function formatCurrency(value: number): string {
   }).format(value)
 }
 
-function getPaymentMethodLabel(method: string): string {
-  const labels: Record<string, string> = {
-    cash: 'Efectivo',
-    transfer: 'Transferencia',
-    qr: 'Código QR',
-    card: 'Tarjeta',
-  }
-  return labels[method] || method
-}
-
 export async function generateInvoicePDF(
   items: InvoiceItem[],
   customer: InvoiceCustomer,
-  paymentMethod: string,
+  _paymentMethod: string,
   discountPercent: number | null,
   discountAmount: number | null
 ): Promise<{
@@ -134,54 +124,26 @@ export async function generateInvoicePDF(
   const storeSettings = await getStoreSettings()
 
   const logoHtml = storeSettings.store_logo
-    ? `<img src="${storeSettings.store_logo}" alt="Logo" style="max-height: 60px; max-width: 150px; object-fit: contain;" />`
-    : `<div style="width: 150px; height: 60px; display: flex; align-items: center; justify-content: center; background: #f0f0f0; border-radius: 4px; font-weight: bold; color: #001D39;">${storeSettings.store_name}</div>`
+    ? `<img src="${storeSettings.store_logo}" alt="Logo" style="width: 100%; max-width: 140px; height: auto;" />`
+    : `<div style="width: 120px; height: 50px; display: flex; align-items: center; justify-content: center; font-family: 'Segoe UI', Arial, sans-serif; font-weight: 700; font-size: 22px; color: #1877F2;">${storeSettings.store_name}</div>`
 
-  const itemsHtml = items
+  const itemsRowsHtml = items
     .map(
-      (item) => `
-      <tr>
-        <td style="padding: 12px; border-bottom: 1px solid #e5e5e5;">
-          ${
-            item.imageUrl
-              ? `<img src="${item.imageUrl}" alt="${item.name}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;" />`
-              : '<div style="width: 50px; height: 50px; background: #f0f0f0; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #999;">📦</div>'
-          }
+      (item, index) => `
+      <tr style="background: ${index % 2 === 0 ? '#FFFFFF' : '#F4F5F7'};">
+        <td style="padding: 16px 12px;">
+          <div style="font-weight: 600; color: #111111; font-size: 13px;">${item.name}</div>
+          ${item.description ? `<div style="font-size: 11px; color: #8E8E8E; margin-top: 4px; line-height: 1.4;">${item.description}</div>` : ''}
         </td>
-        <td style="padding: 12px; border-bottom: 1px solid #e5e5e5;">
-          <div style="font-weight: 500; color: #333;">${item.name}</div>
-          ${item.description ? `<div style="font-size: 12px; color: #666; margin-top: 4px;">${item.description}</div>` : ''}
-        </td>
-        <td style="padding: 12px; border-bottom: 1px solid #e5e5e5; text-align: center; color: #666;">${item.quantity}</td>
-        <td style="padding: 12px; border-bottom: 1px solid #e5e5e5; text-align: right; color: #333;">${formatCurrency(item.unitPrice)}</td>
-        <td style="padding: 12px; border-bottom: 1px solid #e5e5e5; text-align: right; font-weight: 600; color: #333;">${formatCurrency(item.total)}</td>
+        <td style="padding: 16px 12px; text-align: center; font-size: 12px; color: #111111;">${formatCurrency(item.unitPrice)}</td>
+        <td style="padding: 16px 12px; text-align: center; font-size: 12px; color: #111111;">${item.quantity}</td>
+        <td style="padding: 16px 12px; text-align: center; font-size: 12px; color: #8E8E8E;">0%</td>
+        <td style="padding: 16px 12px; text-align: center; font-size: 12px; color: #8E8E8E;">0%</td>
+        <td style="padding: 16px 12px; text-align: right; font-weight: 600; color: #111111; font-size: 13px;">${formatCurrency(item.total)}</td>
       </tr>
     `
     )
     .join('')
-
-  const customerHtml = `
-    <div style="margin-bottom: 20px;">
-      <h3 style="font-size: 14px; color: #666; margin-bottom: 8px; text-transform: uppercase;">Cliente</h3>
-      <div style="background: #f9f9f9; padding: 12px; border-radius: 6px;">
-        <div style="font-weight: 600; color: #333; margin-bottom: 4px;">${customer.name}</div>
-        <div style="font-size: 13px; color: #666; margin-bottom: 2px;">CC/NIT: ${customer.document}</div>
-        ${customer.address ? `<div style="font-size: 13px; color: #666;">📍 ${customer.address}</div>` : ''}
-        ${customer.phone ? `<div style="font-size: 13px; color: #666;">📞 ${customer.phone}</div>` : ''}
-      </div>
-    </div>
-  `
-
-  const discountHtml = discountAmount
-    ? `
-    <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
-      <div style="background: #f9f9f9; padding: 10px 20px; border-radius: 6px; text-align: right;">
-        <div style="font-size: 13px; color: #666;">Descuento ${discountPercent ? `(${discountPercent}%)` : ''}</div>
-        <div style="font-size: 16px; font-weight: 600; color: #c73e3e;">-${formatCurrency(discountAmount)}</div>
-      </div>
-    </div>
-  `
-    : ''
 
   const pdfContent = `
     <!DOCTYPE html>
@@ -189,77 +151,304 @@ export async function generateInvoicePDF(
     <head>
       <meta charset="UTF-8">
       <title>Factura ${invoiceNumber}</title>
+      <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
       <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; color: #333; line-height: 1.5; padding: 40px; }
-        .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px; border-bottom: 2px solid #001D39; padding-bottom: 20px; }
-        .header-left { display: flex; align-items: center; gap: 20px; }
-        .invoice-info { text-align: right; }
-        .invoice-number { font-size: 24px; font-weight: bold; color: #001D39; }
-        .invoice-date { font-size: 13px; color: #666; margin-top: 4px; }
-        .invoice-method { font-size: 12px; color: #888; margin-top: 2px; }
-        .store-info { margin-top: 8px; font-size: 13px; color: #666; }
-        .store-name { font-size: 18px; font-weight: bold; color: #001D39; }
-        .store-id { font-size: 12px; color: #888; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-        th { background: #001D39; color: white; padding: 12px; text-align: left; font-size: 12px; text-transform: uppercase; }
-        th:last-child { text-align: right; }
-        .total-section { display: flex; justify-content: flex-end; margin-top: 20px; }
-        .total-box { background: #001D39; color: white; padding: 20px 30px; border-radius: 8px; text-align: right; min-width: 250px; }
-        .total-label { font-size: 14px; opacity: 0.8; }
-        .total-amount { font-size: 28px; font-weight: bold; margin-top: 4px; }
-        .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e5e5; font-size: 12px; color: #888; text-align: center; }
+        body {
+          font-family: 'Poppins', 'Segoe UI', Arial, sans-serif;
+          color: #111111;
+          background: #FFFFFF;
+          line-height: 1.5;
+          padding: 45px;
+        }
+        .header {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          margin-bottom: 50px;
+        }
+        .logo-section {
+          width: 20%;
+        }
+        .invoice-title {
+          text-align: right;
+        }
+        .invoice-title h1 {
+          font-size: 44px;
+          font-weight: 700;
+          color: #111111;
+          letter-spacing: -1px;
+        }
+        .invoice-meta {
+          margin-top: 12px;
+          font-size: 11px;
+          color: #8E8E8E;
+        }
+        .invoice-meta span {
+          color: #111111;
+          font-weight: 500;
+        }
+        .parties-section {
+          display: grid;
+          grid-template-columns: 1fr 80px 1fr;
+          margin-bottom: 45px;
+        }
+        .party-box h4 {
+          font-size: 10px;
+          text-transform: uppercase;
+          letter-spacing: 1.5px;
+          color: #8E8E8E;
+          margin-bottom: 12px;
+        }
+        .party-box .company-name {
+          font-size: 18px;
+          font-weight: 700;
+          color: #111111;
+          margin-bottom: 8px;
+        }
+        .party-box p {
+          font-size: 12px;
+          color: #8E8E8E;
+          line-height: 1.6;
+        }
+        .party-right {
+          text-align: right;
+        }
+        .party-right .company-name {
+          font-size: 18px;
+          font-weight: 700;
+          color: #111111;
+          margin-bottom: 8px;
+        }
+        .party-right p {
+          font-size: 12px;
+          color: #8E8E8E;
+          line-height: 1.6;
+        }
+        .party-block {
+          margin-bottom: 28px;
+        }
+        .table-section {
+          margin-bottom: 45px;
+        }
+        table {
+          width: 100%;
+          border-collapse: collapse;
+        }
+        thead tr {
+          background: #1877F2;
+        }
+        thead th {
+          color: #FFFFFF;
+          font-size: 11px;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          padding: 14px 12px;
+          text-align: left;
+        }
+        thead th:nth-child(2),
+        thead th:nth-child(3),
+        thead th:nth-child(4),
+        thead th:nth-child(5) {
+          text-align: center;
+        }
+        thead th:last-child {
+          text-align: right;
+        }
+        .tbody tr:first-child td {
+          padding-top: 20px;
+        }
+        .tbody tr:last-child td {
+          padding-bottom: 20px;
+        }
+        .footer-section {
+          display: grid;
+          grid-template-columns: 1fr 320px;
+          gap: 60px;
+        }
+        .payment-info h4,
+        .notes h4 {
+          font-size: 13px;
+          font-weight: 700;
+          color: #111111;
+          margin-bottom: 12px;
+        }
+        .payment-methods {
+          margin-bottom: 24px;
+        }
+        .payment-methods p {
+          font-size: 12px;
+          color: #8E8E8E;
+          margin-bottom: 4px;
+        }
+        .notes p {
+          font-size: 11px;
+          color: #8E8E8E;
+          line-height: 1.6;
+          max-width: 280px;
+        }
+        .summary-box {
+          background: #F4F5F7;
+          border-radius: 10px;
+          padding: 24px;
+        }
+        .summary-row {
+          display: flex;
+          justify-content: space-between;
+          padding: 8px 0;
+          font-size: 13px;
+        }
+        .summary-row span:first-child {
+          color: #8E8E8E;
+        }
+        .summary-row span:last-child {
+          color: #111111;
+          font-weight: 500;
+        }
+        .summary-row.total-row {
+          background: #F4F5F7;
+          margin: 12px -24px -24px;
+          padding: 20px 24px;
+          border-radius: 0 0 10px 10px;
+        }
+        .summary-row.total-row span:first-child {
+          color: #111111;
+          font-weight: 700;
+          font-size: 14px;
+        }
+        .summary-row.total-row span:last-child {
+          color: #111111;
+          font-weight: 700;
+          font-size: 22px;
+        }
+        .signature {
+          margin-top: 50px;
+          text-align: right;
+        }
+        .signature-line {
+          font-family: 'Brush Script MT', cursive;
+          font-size: 32px;
+          color: #1877F2;
+        }
+        .signature-label {
+          font-size: 10px;
+          color: #8E8E8E;
+          margin-top: 4px;
+        }
       </style>
     </head>
     <body>
       <div class="header">
-        <div class="header-left">
+        <div class="logo-section">
           ${logoHtml}
-          <div>
-            <div class="store-name">${storeSettings.store_name}</div>
-            ${storeSettings.store_identification ? `<div class="store-id">${storeSettings.store_identification}</div>` : ''}
-            <div class="store-info">
-              ${storeSettings.store_address ? `📍 ${storeSettings.store_address}` : ''}
-              ${storeSettings.store_phone ? ` 📞 ${storeSettings.store_phone}` : ''}
-              ${storeSettings.store_email ? ` 📧 ${storeSettings.store_email}` : ''}
+        </div>
+        <div class="invoice-title">
+          <h1>Factura PDF</h1>
+          <div class="invoice-meta">
+            <div>N° Orden: <span>${invoiceNumber}</span></div>
+            <div>Fecha: <span>${formatDate(today)}</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="parties-section">
+        <div class="party-box">
+          <h4>De</h4>
+          <div class="company-name">${storeSettings.store_name}</div>
+          <p>
+            ${storeSettings.store_identification ? storeSettings.store_identification + '<br>' : ''}
+            ${storeSettings.store_email || 'email@ejemplo.com'}<br>
+            ${storeSettings.store_phone || '+57 300 000 0000'}<br>
+            ${storeSettings.store_address || 'Dirección de la empresa'}
+          </p>
+        </div>
+        <div></div>
+        <div class="party-box party-right">
+          <div class="party-block">
+            <h4>Cobrar a</h4>
+            <div class="company-name">${customer.name}</div>
+            <p>
+              ${customer.document}<br>
+              ${customer.phone || ''}<br>
+              ${customer.address || ''}
+            </p>
+          </div>
+          <div class="party-block">
+            <h4>Envíe a</h4>
+            <p>
+              ${customer.name}<br>
+              ${customer.address || 'Dirección del cliente'}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="table-section">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 40%;">Descripción</th>
+              <th style="width: 15%;">Precio unitario</th>
+              <th style="width: 10%;">Cantidad</th>
+              <th style="width: 12%;">Impuestos</th>
+              <th style="width: 12%;">Descuento</th>
+              <th style="width: 11%;">Total</th>
+            </tr>
+          </thead>
+          <tbody class="tbody">
+            ${itemsRowsHtml}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="footer-section">
+        <div>
+          <div class="payment-info">
+            <h4>Instrucciones de pago</h4>
+            <div class="payment-methods">
+              <p>Efectivo</p>
+              <p>Transferencia bancaria</p>
+              <p>Correo PayPal</p>
+              <p>Cheque</p>
+            </div>
+          </div>
+          <div class="notes">
+            <h4>Notas</h4>
+            <p>Gracias por su compra. Esta factura es un documento soporte de la transacción. Konserve el documento para cualquier reclamo o garantía.</p>
+          </div>
+        </div>
+        <div>
+          <div class="summary-box">
+            <div class="summary-row">
+              <span>Subtotal</span>
+              <span>${formatCurrency(subtotal)}</span>
+            </div>
+            ${discountAmount ? `
+            <div class="summary-row">
+              <span>Descuento ${discountPercent ? `(${discountPercent}%)` : ''}</span>
+              <span>-${formatCurrency(discountAmount)}</span>
+            </div>
+            ` : ''}
+            <div class="summary-row">
+              <span>Envío</span>
+              <span>${formatCurrency(0)}</span>
+            </div>
+            <div class="summary-row">
+              <span>Impuestos</span>
+              <span>${formatCurrency(0)}</span>
+            </div>
+            <div class="summary-row total-row">
+              <span>Saldo pendiente</span>
+              <span>${formatCurrency(total)}</span>
             </div>
           </div>
         </div>
-        <div class="invoice-info">
-          <div class="invoice-number">${invoiceNumber}</div>
-          <div class="invoice-date">Fecha: ${formatDate(today)}</div>
-          <div class="invoice-method">Pago: ${getPaymentMethodLabel(paymentMethod)}</div>
-        </div>
       </div>
 
-      ${customerHtml}
-
-      <table>
-        <thead>
-          <tr>
-            <th style="width: 70px;"></th>
-            <th>Producto</th>
-            <th style="width: 80px; text-align: center;">Cant.</th>
-            <th style="width: 120px; text-align: right;">P. Unit.</th>
-            <th style="width: 120px; text-align: right;">Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${itemsHtml}
-        </tbody>
-      </table>
-
-      ${discountHtml}
-
-      <div class="total-section">
-        <div class="total-box">
-          <div class="total-label">TOTAL</div>
-          <div class="total-amount">${formatCurrency(total)}</div>
-        </div>
-      </div>
-
-      <div class="footer">
-        Factura de venta. Esta factura es un documento soporte de la transacción.
+      <div class="signature">
+        <div class="signature-line">Firma</div>
+        <div class="signature-label">Authorized Signature</div>
       </div>
     </body>
     </html>
