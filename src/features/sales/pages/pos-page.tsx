@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Search, ShoppingCart, CreditCard, Banknote, QrCode, Plus, Minus, X } from 'lucide-react'
+import { Search, ShoppingCart, CreditCard, Banknote, QrCode, Plus, Minus, X, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
@@ -27,6 +27,7 @@ import { salesService } from '@/features/sales/services/sales-service'
 import { useAuthStore } from '@/features/auth/store/auth-store'
 import type { Product } from '@/types'
 import { toast } from 'sonner'
+import { InvoiceDialog } from '@/features/invoices/components/invoice-dialog'
 
 interface CartItem {
   product: Product
@@ -58,6 +59,17 @@ export default function POSPage() {
   const [isProcessing, setIsProcessing] = useState(false)
   const [discountPercent, setDiscountPercent] = useState<number>(0)
   const [isCartOpen, setIsCartOpen] = useState(false)
+  const [isInvoiceDialogOpen, setIsInvoiceDialogOpen] = useState(false)
+  const [isInvoicePromptOpen, setIsInvoicePromptOpen] = useState(false)
+  const [lastSaleInfo, setLastSaleInfo] = useState<{
+    saleId: string | null
+    items: { productId: string; name: string; quantity: number; unitPrice: number; total: number }[]
+    paymentMethod: string
+    subtotal: number
+    discountPercent: number | null
+    discountAmount: number | null
+    total: number
+  } | null>(null)
 
   const { data: products = [], isLoading: isLoadingProducts } = useQuery({
     queryKey: ['products-all'],
@@ -66,7 +78,7 @@ export default function POSPage() {
 
   const createSaleMutation = useMutation({
     mutationFn: salesService.createSale,
-    onSuccess: async () => {
+    onSuccess: async (saleData) => {
       await queryClient.invalidateQueries({ queryKey: ['products-all'] })
       await queryClient.refetchQueries({ queryKey: ['products-all'] })
       queryClient.invalidateQueries({ queryKey: ['sales'] })
@@ -77,10 +89,30 @@ export default function POSPage() {
       queryClient.invalidateQueries({ queryKey: ['expenses-months'] })
       queryClient.invalidateQueries({ queryKey: ['monthly-closures'] })
       toast.success('Venta realizada exitosamente')
+
+      const items = cart.map((item) => ({
+        productId: item.product.id,
+        name: item.product.name,
+        quantity: item.quantity,
+        unitPrice: item.product.sale_price,
+        total: item.product.sale_price * item.quantity,
+      }))
+
+      setLastSaleInfo({
+        saleId: saleData?.id || null,
+        items,
+        paymentMethod,
+        subtotal: cartTotal,
+        discountPercent: discountPercent > 0 ? discountPercent : null,
+        discountAmount: discountAmount > 0 ? discountAmount : null,
+        total: finalTotal,
+      })
+
       setCart([])
       setDiscountPercent(0)
       setIsCheckoutOpen(false)
       setIsCartOpen(false)
+      setIsInvoicePromptOpen(true)
     },
     onError: (error: Error) => {
       toast.error(`Error: ${error.message}`)
@@ -534,6 +566,62 @@ export default function POSPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {lastSaleInfo && (
+        <>
+          <Dialog open={isInvoicePromptOpen} onOpenChange={setIsInvoicePromptOpen}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Generar Factura
+                </DialogTitle>
+              </DialogHeader>
+              <div className="py-4">
+                <p className="text-muted-foreground">
+                  ¿Desea generar una factura para esta venta?
+                </p>
+              </div>
+              <DialogFooter className="gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setIsInvoicePromptOpen(false)
+                    setLastSaleInfo(null)
+                  }}
+                >
+                  No, gracias
+                </Button>
+                <Button
+                  style={{ backgroundColor: '#0A4174' }}
+                  onClick={() => {
+                    setIsInvoicePromptOpen(false)
+                    setIsInvoiceDialogOpen(true)
+                  }}
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  Sí, generar factura
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          <InvoiceDialog
+            open={isInvoiceDialogOpen}
+            onOpenChange={(open) => {
+              setIsInvoiceDialogOpen(open)
+              if (!open) setLastSaleInfo(null)
+            }}
+            saleId={lastSaleInfo.saleId}
+            items={lastSaleInfo.items}
+            paymentMethod={lastSaleInfo.paymentMethod}
+            subtotal={lastSaleInfo.subtotal}
+            discountPercent={lastSaleInfo.discountPercent}
+            discountAmount={lastSaleInfo.discountAmount}
+            total={lastSaleInfo.total}
+          />
+        </>
+      )}
     </div>
   )
 }

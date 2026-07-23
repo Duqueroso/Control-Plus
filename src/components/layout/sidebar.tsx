@@ -12,6 +12,7 @@ import {
   FileText,
   RefreshCw,
   Calendar,
+  ReceiptText,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -30,6 +31,7 @@ const menuItems = [
   { path: '/expenses', label: 'Gastos', icon: Receipt },
   { path: '/reinvestments', label: 'Reinversiones', icon: RefreshCw },
   { path: '/closures', label: 'Historial', icon: Calendar },
+  { path: '/invoices', label: 'Facturas', icon: ReceiptText },
   { path: '/users', label: 'Usuarios', icon: Users },
   { path: '/settings', label: 'Configuración', icon: Settings },
 ]

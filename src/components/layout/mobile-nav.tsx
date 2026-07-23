@@ -7,6 +7,7 @@ import {
   Receipt,
   Users,
   Settings,
+  ReceiptText,
 } from 'lucide-react'
 import {
   Sheet,
@@ -22,6 +23,7 @@ const menuItems = [
   { path: '/pos', label: 'Punto de Venta', icon: ShoppingCart },
   { path: '/sales', label: 'Ventas', icon: DollarSign },
   { path: '/expenses', label: 'Gastos', icon: Receipt },
+  { path: '/invoices', label: 'Facturas', icon: ReceiptText },
   { path: '/users', label: 'Usuarios', icon: Users },
   { path: '/settings', label: 'Configuración', icon: Settings },
 ]
