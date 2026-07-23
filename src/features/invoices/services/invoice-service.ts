@@ -131,15 +131,13 @@ export async function generateInvoicePDF(
     .map(
       (item, index) => `
       <tr style="background: ${index % 2 === 0 ? '#FFFFFF' : '#F4F5F7'};">
-        <td style="padding: 16px 12px;">
-          <div style="font-weight: 600; color: #111111; font-size: 13px;">${item.name}</div>
-          ${item.description ? `<div style="font-size: 11px; color: #8E8E8E; margin-top: 4px; line-height: 1.4;">${item.description}</div>` : ''}
+        <td style="padding: 18px 14px;">
+          <div style="font-weight: 600; color: #111111; font-size: 14px;">${item.name}</div>
+          ${item.description ? `<div style="font-size: 11px; color: #8E8E8E; margin-top: 6px; line-height: 1.5;">${item.description}</div>` : ''}
         </td>
-        <td style="padding: 16px 12px; text-align: center; font-size: 12px; color: #111111;">${formatCurrency(item.unitPrice)}</td>
-        <td style="padding: 16px 12px; text-align: center; font-size: 12px; color: #111111;">${item.quantity}</td>
-        <td style="padding: 16px 12px; text-align: center; font-size: 12px; color: #8E8E8E;">0%</td>
-        <td style="padding: 16px 12px; text-align: center; font-size: 12px; color: #8E8E8E;">0%</td>
-        <td style="padding: 16px 12px; text-align: right; font-weight: 600; color: #111111; font-size: 13px;">${formatCurrency(item.total)}</td>
+        <td style="padding: 18px 14px; text-align: center; font-size: 13px; color: #111111;">${formatCurrency(item.unitPrice)}</td>
+        <td style="padding: 18px 14px; text-align: center; font-size: 13px; color: #111111;">${item.quantity}</td>
+        <td style="padding: 18px 14px; text-align: right; font-weight: 600; color: #111111; font-size: 14px;">${formatCurrency(item.total)}</td>
       </tr>
     `
     )
@@ -223,13 +221,10 @@ export async function generateInvoicePDF(
         .party-right p {
           font-size: 12px;
           color: #8E8E8E;
-          line-height: 1.6;
-        }
-        .party-block {
-          margin-bottom: 28px;
+          line-height: 1.7;
         }
         .table-section {
-          margin-bottom: 45px;
+          margin-bottom: 50px;
         }
         table {
           width: 100%;
@@ -243,50 +238,39 @@ export async function generateInvoicePDF(
           font-size: 11px;
           font-weight: 600;
           text-transform: uppercase;
-          letter-spacing: 0.5px;
-          padding: 14px 12px;
+          letter-spacing: 0.8px;
+          padding: 16px 14px;
           text-align: left;
         }
         thead th:nth-child(2),
-        thead th:nth-child(3),
-        thead th:nth-child(4),
-        thead th:nth-child(5) {
+        thead th:nth-child(3) {
           text-align: center;
         }
         thead th:last-child {
           text-align: right;
         }
         .tbody tr:first-child td {
-          padding-top: 20px;
+          padding-top: 22px;
         }
         .tbody tr:last-child td {
-          padding-bottom: 20px;
+          padding-bottom: 22px;
         }
         .footer-section {
           display: grid;
           grid-template-columns: 1fr 320px;
-          gap: 60px;
+          gap: 80px;
         }
-        .payment-info h4,
         .notes h4 {
           font-size: 13px;
           font-weight: 700;
           color: #111111;
-          margin-bottom: 12px;
-        }
-        .payment-methods {
-          margin-bottom: 24px;
-        }
-        .payment-methods p {
-          font-size: 12px;
-          color: #8E8E8E;
-          margin-bottom: 4px;
+          margin-bottom: 14px;
         }
         .notes p {
-          font-size: 11px;
+          font-size: 12px;
           color: #8E8E8E;
-          line-height: 1.6;
-          max-width: 280px;
+          line-height: 1.7;
+          max-width: 320px;
         }
         .summary-box {
           background: #F4F5F7;
@@ -321,20 +305,6 @@ export async function generateInvoicePDF(
           color: #111111;
           font-weight: 700;
           font-size: 22px;
-        }
-        .signature {
-          margin-top: 50px;
-          text-align: right;
-        }
-        .signature-line {
-          font-family: 'Brush Script MT', cursive;
-          font-size: 32px;
-          color: #1877F2;
-        }
-        .signature-label {
-          font-size: 10px;
-          color: #8E8E8E;
-          margin-top: 4px;
         }
       </style>
     </head>
@@ -374,13 +344,6 @@ export async function generateInvoicePDF(
               ${customer.address || ''}
             </p>
           </div>
-          <div class="party-block">
-            <h4>Envíe a</h4>
-            <p>
-              ${customer.name}<br>
-              ${customer.address || 'Dirección del cliente'}
-            </p>
-          </div>
         </div>
       </div>
 
@@ -388,12 +351,10 @@ export async function generateInvoicePDF(
         <table>
           <thead>
             <tr>
-              <th style="width: 40%;">Descripción</th>
-              <th style="width: 15%;">Precio unitario</th>
+              <th style="width: 55%;">Descripción</th>
+              <th style="width: 20%;">Precio unitario</th>
               <th style="width: 10%;">Cantidad</th>
-              <th style="width: 12%;">Impuestos</th>
-              <th style="width: 12%;">Descuento</th>
-              <th style="width: 11%;">Total</th>
+              <th style="width: 15%;">Total</th>
             </tr>
           </thead>
           <tbody class="tbody">
@@ -404,18 +365,9 @@ export async function generateInvoicePDF(
 
       <div class="footer-section">
         <div>
-          <div class="payment-info">
-            <h4>Instrucciones de pago</h4>
-            <div class="payment-methods">
-              <p>Efectivo</p>
-              <p>Transferencia bancaria</p>
-              <p>Correo PayPal</p>
-              <p>Cheque</p>
-            </div>
-          </div>
           <div class="notes">
             <h4>Notas</h4>
-            <p>Gracias por su compra. Esta factura es un documento soporte de la transacción. Konserve el documento para cualquier reclamo o garantía.</p>
+            <p>Gracias por su compra. Esta factura es un documento soporte de la transacción. Conserve el documento para cualquier reclamo o garantía.</p>
           </div>
         </div>
         <div>
@@ -444,11 +396,6 @@ export async function generateInvoicePDF(
             </div>
           </div>
         </div>
-      </div>
-
-      <div class="signature">
-        <div class="signature-line">Firma</div>
-        <div class="signature-label">Authorized Signature</div>
       </div>
     </body>
     </html>
