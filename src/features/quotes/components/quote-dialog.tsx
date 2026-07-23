@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import html2pdf from 'html2pdf'
+import jsPDF from 'jspdf'
+import html2canvas from 'html2canvas'
 import { inventoryService } from '@/features/inventory/services/inventory-service'
 import { generateQuotePDF, type QuoteItem } from '../services/quote-service'
 import { quoteCustomerSchema, type QuoteCustomer, type CustomItem } from '../schemas/quote-schema'
@@ -198,15 +199,29 @@ export function QuoteDialog({ open, onOpenChange }: QuoteDialogProps) {
       container.style.position = 'absolute'
       container.style.left = '-9999px'
       container.style.top = '0'
+      container.style.width = '210mm'
+      container.style.padding = '20px'
+      container.style.background = 'white'
+      container.style.fontFamily = 'Arial, sans-serif'
       document.body.appendChild(container)
 
-      await html2pdf().set({
-        margin: 10,
-        filename: `${quoteNumber}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-      }).from(container).save()
+      const canvas = await html2canvas(container, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff'
+      })
+
+      const imgData = canvas.toDataURL('image/jpeg', 0.98)
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      })
+
+      const imgWidth = 210
+      const imgHeight = (canvas.height * imgWidth) / canvas.width
+      pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight)
+      pdf.save(`${quoteNumber}.pdf`)
 
       document.body.removeChild(container)
 
