@@ -100,15 +100,22 @@ export function InvoiceDialog({
         paymentMethod,
       })
 
-      const opt = {
+      const container = document.createElement('div')
+      container.innerHTML = pdfContent
+      container.style.position = 'absolute'
+      container.style.left = '-9999px'
+      container.style.top = '0'
+      document.body.appendChild(container)
+
+      await html2pdf().set({
         margin: 10,
         filename: `Factura_${customer.document}.pdf`,
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2 },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-      }
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      }).from(container).save()
 
-      await html2pdf().set(opt).from(pdfContent).save()
+      document.body.removeChild(container)
 
       toast.success('Factura generada exitosamente')
       handleClose()
