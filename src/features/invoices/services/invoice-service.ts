@@ -382,16 +382,8 @@ export async function generateInvoicePDF(
               <span>-${formatCurrency(discountAmount)}</span>
             </div>
             ` : ''}
-            <div class="summary-row">
-              <span>Envío</span>
-              <span>${formatCurrency(0)}</span>
-            </div>
-            <div class="summary-row">
-              <span>Impuestos</span>
-              <span>${formatCurrency(0)}</span>
-            </div>
             <div class="summary-row total-row">
-              <span>Saldo pendiente</span>
+              <span>Total</span>
               <span>${formatCurrency(total)}</span>
             </div>
           </div>
