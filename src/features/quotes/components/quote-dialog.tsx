@@ -194,21 +194,36 @@ export function QuoteDialog({ open, onOpenChange }: QuoteDialogProps) {
     try {
       const { pdfContent, quoteNumber } = await generateQuotePDF(allItems, customer)
 
-      const container = document.createElement('div')
-      container.innerHTML = pdfContent
-      container.style.position = 'absolute'
-      container.style.left = '-9999px'
-      container.style.top = '0'
-      container.style.width = '210mm'
-      container.style.padding = '20px'
-      container.style.background = 'white'
-      container.style.fontFamily = 'Arial, sans-serif'
-      document.body.appendChild(container)
+      const iframe = document.createElement('iframe')
+      iframe.style.position = 'absolute'
+      iframe.style.left = '-9999px'
+      iframe.style.top = '0'
+      iframe.style.width = '794px'
+      iframe.style.height = '1123px'
+      iframe.style.background = 'white'
+      document.body.appendChild(iframe)
 
-      const canvas = await html2canvas(container, {
+      const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document
+      if (!iframeDoc) throw new Error('Could not access iframe document')
+
+      iframeDoc.open()
+      iframeDoc.write(pdfContent)
+      iframeDoc.close()
+
+      await new Promise(resolve => {
+        if (iframeDoc.body) {
+          iframeDoc.body.style.margin = '0'
+          iframeDoc.documentElement.style.margin = '0'
+        }
+        setTimeout(resolve, 100)
+      })
+
+      const canvas = await html2canvas(iframeDoc.documentElement, {
         scale: 2,
         useCORS: true,
-        backgroundColor: '#ffffff'
+        backgroundColor: '#ffffff',
+        width: 794,
+        height: 1123
       })
 
       const imgData = canvas.toDataURL('image/jpeg', 0.98)
@@ -223,7 +238,7 @@ export function QuoteDialog({ open, onOpenChange }: QuoteDialogProps) {
       pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight)
       pdf.save(`${quoteNumber}.pdf`)
 
-      document.body.removeChild(container)
+      document.body.removeChild(iframe)
 
       toast.success(`Cotización ${quoteNumber} generada`)
       onOpenChange(false)
