@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Search, ShoppingCart, CreditCard, Banknote, QrCode, Plus, Minus, X, FileText } from 'lucide-react'
+import { Search, ShoppingCart, CreditCard, Banknote, QrCode, Plus, Minus, X, FileText, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent } from '@/components/ui/card'
@@ -56,7 +56,6 @@ export default function POSPage() {
   const [cart, setCart] = useState<CartItem[]>([])
   const [paymentMethod, setPaymentMethod] = useState<string>('cash')
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false)
-  const [isProcessing, setIsProcessing] = useState(false)
   const [discountPercent, setDiscountPercent] = useState<number>(0)
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [isInvoiceDialogOpen, setIsInvoiceDialogOpen] = useState(false)
@@ -201,7 +200,6 @@ export default function POSPage() {
       return
     }
 
-    setIsProcessing(true)
     createSaleMutation.mutate({
       userId: user.id,
       total: finalTotal,
@@ -216,7 +214,6 @@ export default function POSPage() {
         total: item.product.sale_price * item.quantity,
       })),
     })
-    setIsProcessing(false)
   }
 
   return (
@@ -559,9 +556,16 @@ export default function POSPage() {
             <Button
               style={{ backgroundColor: '#0A4174' }}
               onClick={handleCheckout}
-              disabled={isProcessing || cart.length === 0}
+              disabled={createSaleMutation.isPending || cart.length === 0}
             >
-              {isProcessing ? 'Procesando...' : `Confirmar ${formatCurrency(finalTotal)}`}
+              {createSaleMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Procesando...
+                </>
+              ) : (
+                `Confirmar ${formatCurrency(finalTotal)}`
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
