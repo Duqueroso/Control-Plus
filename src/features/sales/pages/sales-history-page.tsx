@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useState, useEffect } from 'react'
-import { Package, ArrowRight, XCircle, Search, AlertTriangle } from 'lucide-react'
+import { useState, useEffect, useMemo } from 'react'
+import { Package, ArrowRight, XCircle, Search, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -55,6 +55,8 @@ export default function SalesHistoryPage() {
   const [showCancelDialog, setShowCancelDialog] = useState(false)
   const [isCancelling, setIsCancelling] = useState(false)
   const [localSales, setLocalSales] = useState<Sale[]>([])
+  const [currentPage, setCurrentPage] = useState(1)
+  const ITEMS_PER_PAGE = 25
 
   const { data: sales = [], isLoading } = useQuery({
     queryKey: ['sales'],
@@ -131,6 +133,16 @@ export default function SalesHistoryPage() {
           sale.total.toString().includes(searchQuery)
       )
     : localSales
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchQuery])
+
+  const totalPages = Math.ceil(filteredSales.length / ITEMS_PER_PAGE)
+  const paginatedSales = useMemo(() => {
+    const start = (currentPage - 1) * ITEMS_PER_PAGE
+    return filteredSales.slice(start, start + ITEMS_PER_PAGE)
+  }, [filteredSales, currentPage])
 
   const totalSales = localSales.filter((s) => s.status === 'completed').length
   const totalAmount = localSales
@@ -222,7 +234,7 @@ export default function SalesHistoryPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredSales.map((sale) => (
+                {paginatedSales.map((sale) => (
                   <TableRow key={sale.id}>
                     <TableCell className="whitespace-nowrap">
                       {formatDate(sale.created_at)}
@@ -252,6 +264,57 @@ export default function SalesHistoryPage() {
                 ))}
               </TableBody>
             </Table>
+          )}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between mt-4 px-2">
+              <div className="text-sm text-muted-foreground">
+                {`Mostrando ${(currentPage - 1) * ITEMS_PER_PAGE + 1} - ${Math.min(currentPage * ITEMS_PER_PAGE, filteredSales.length)} de ${filteredSales.length}`}
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum
+                    if (totalPages <= 5) {
+                      pageNum = i + 1
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i
+                    } else {
+                      pageNum = currentPage - 2 + i
+                    }
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setCurrentPage(pageNum)}
+                        className="w-9"
+                        style={currentPage === pageNum ? { backgroundColor: '#0A4174' } : undefined}
+                      >
+                        {pageNum}
+                      </Button>
+                    )
+                  })}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
           )}
         </CardContent>
       </Card>
